@@ -1,0 +1,2187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0916">
+  <title>GRIND — Grind your way through the market</title>
+  <link rel="stylesheet" href="styles.css?v=85">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <main id="authView" class="auth-shell">
+    <section class="auth-card">
+      <div class="brand-mark">G</div>
+      <div class="eyebrow">GRIND YOUR WAY THROUGH THE MARKET</div>
+      <h1>GRIND<span>.</span></h1>
+      <p class="muted">Create, discover and trade community currencies. Live with everyone.</p>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-auth="login">Log in</button>
+        <button type="button" class="auth-tab" data-auth="signup">Sign up</button>
+      </div>
+      <form id="authForm">
+        <label>Email<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="Password (min 6)"></label>
+        <label id="testAccountOption" class="hidden" style="display:flex;align-items:flex-start;gap:10px;margin:4px 0 12px;padding:12px;border:1px solid rgba(168,85,247,.35);border-radius:12px;background:rgba(168,85,247,.07);">
+          <input id="authTestAccount" type="checkbox" style="width:17px;height:17px;flex:0 0 auto;margin-top:2px;">
+          <span><strong style="display:block;color:#f5f0ff;">Create a Test Account</strong><small class="muted" style="display:block;line-height:1.4;">Private testing account with unlimited cash. Hidden from public lists and leaderboards. Cannot create coins or invest.</small></span>
+        </label>
+        <button class="primary-btn full" id="authSubmit" type="submit">Log in</button>
+      </form>
+      <div id="signupVerifyBox" class="verify-box hidden">
+        <div class="eyebrow purple-text" style="margin-bottom:6px;">EMAIL VERIFICATION</div>
+        <p class="muted tiny" style="margin:0 0 14px;line-height:1.45;">Enter the confirmation code sent to <strong id="verifyEmailDisplay" style="color:#f5f0ff;"></strong> to activate your new account.</p>
+        <form id="signupVerifyForm">
+          <label>Verification Code
+            <input id="signupOtpCode" class="verify-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required placeholder="000000">
+          </label>
+          <button class="primary-btn full" id="verifyOtpBtn" type="submit">Verify &amp; Create Account</button>
+        </form>
+        <div class="verify-actions">
+          <button type="button" class="zoom-btn" id="resendOtpBtn">Resend code</button>
+          <button type="button" class="zoom-btn" id="cancelVerifyBtn">Back</button>
+        </div>
+      </div>
+      <p class="tiny muted">GRIND v0.7</p>
+      <p id="authMessage" class="form-message" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-icon">G</span><span>GRIND<span class="brand-dot">.</span></span></a>
+      <div class="sidebar-scroll">
+        <div class="side-label">MARKET</div>
+        <nav class="main-nav">
+          <button class="nav-btn active" data-page="feed"><span>◈</span> Feed</button>
+          <button class="nav-btn" data-page="live"><span>◉</span> Live</button>
+          <button class="nav-btn" data-page="create"><span>＋</span> Create</button>
+          <button class="nav-btn" data-page="money"><span>▣</span> Money</button>
+          <button class="nav-btn" data-page="global"><span>⊕</span> Global</button>
+          <button class="nav-btn" data-page="play"><span>▶</span> Play</button>
+          <button type="button" class="nav-btn" id="navUploadBtn"><span>⇪</span> UPLOAD</button>
+          <button class="nav-btn" id="navGrindBot" data-page="grindbot"><span>⌘</span> GRIND-BOT <span id="navGrindBotTag" class="nav-tier-chip">PRO+</span></button>
+          <button class="nav-btn" data-page="account"><span>◎</span> Account</button>
+          <button class="nav-btn" data-page="report"><span>△</span> Report</button>
+          <button class="nav-btn" id="navNotifications" data-page="notifications"><span>✦</span> Notifications <span id="navNotificationsBadge" class="nav-count-badge hidden">0</span></button>
+          <button class="nav-btn" data-page="grindworld"><span>◎</span> GrindWorld</button>
+          <button class="nav-btn hidden" id="navAdmin" data-page="admin"><span>❖</span> Admin</button>
+        </nav>
+        <div class="side-label">COMPANY</div>
+        <nav class="main-nav company-nav">
+          <button class="nav-btn" data-page="company"><span>▣</span> Company</button>
+          <button class="nav-btn" data-page="company-design"><span>✎</span> Design</button>
+          <button class="nav-btn" data-page="company-products"><span>▦</span> Products</button>
+        </nav>
+        <div class="side-label side-label-store">STORE</div>
+        <nav class="main-nav">
+          <button class="nav-btn" data-page="marketplace"><span>❖</span> Marketplace</button>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <button class="nav-btn pass-side-btn" id="navPassBtn" data-page="pass"><span>★</span> Pass <span id="navPassBadge" class="nav-count-badge hidden">0</span></button>
+        <div class="mini-profile">
+          <div class="avatar" id="sideAvatar">G</div>
+          <div>
+            <strong id="sideName">Trader</strong>
+            <small id="sidePremium">Member</small>
+          </div>
+        </div>
+        <button id="logoutBtn" class="logout-btn">↗ Log out</button>
+        <div class="version">GRIND v0.7</div>
+      </div>
+    </aside>
+    <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop hidden" aria-hidden="true"></div>
+
+    <section class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false">☰</button>
+          <h2 id="pageTitle">Discover currencies</h2>
+          <div id="feedTypeSwitch" class="feed-type-switch" role="group" aria-label="Feed type">
+            <button type="button" class="feed-type-btn active" data-feed-type="coin">Coin</button>
+            <button type="button" class="feed-type-btn" data-feed-type="product">Product</button>
+            <button type="button" class="feed-type-btn" data-feed-type="company">Companies</button>
+          </div>
+        </div>
+        <div class="top-right">
+          <button type="button" id="topBattlePill" class="battle-top-pill hidden" title="Active Trader Battle">⚔️ <span id="topBattlePillText">00:00</span></button>
+          <div class="cash-pill"><small>CASH</small> <span id="topCash">$15.00</span></div>
+          <button type="button" id="openDmBtn" class="dm-topbar-btn" title="Direct Messages" aria-label="Direct Messages">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+            <span id="dmUnreadBadge" class="dm-unread-badge hidden" aria-hidden="true"></span>
+          </button>
+          <div class="avatar" id="topAvatar">G</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- FEED -->
+        <section id="page-feed" class="page"><aside id="grindAdsRail" class="grind-ads-rail" aria-label="Sponsored products"><div class="grind-ads-rail-title">SPONSORED</div><div id="grindAdsSlots" class="grind-ads-slots"></div></aside>
+          <div class="hero-panel">
+            <div>
+              <div class="eyebrow">LIVE MARKET</div>
+              <h3>Trade community coins</h3>
+              <p class="muted">Everyone sees the same prices in real time. Always starts at $1. Infinite supply.</p>
+            </div>
+            <div class="hero-orb"><span>G</span></div>
+          </div>
+          <div id="featuredSection" class="featured-panel hidden">
+            <div class="featured-head">
+              <div>
+                <div class="eyebrow purple-text">★ FEATURED</div>
+                <h3 style="margin:3px 0 0;font-size:18px;">Featured Coins</h3>
+              </div>
+              <button type="button" id="editFeaturedBtn" class="edit-coin-btn hidden">✎ Edit Featured (3)</button>
+            </div>
+            <div id="featuredGrid" class="featured-grid"></div>
+          </div>
+
+          <div id="coinFeedContent">
+          <div class="feed-toolbar">
+            <div class="feed-tabs">
+              <button class="feed-tab" data-feed="cheap">Cheapest</button>
+              <button class="feed-tab active" data-feed="new">Newest</button>
+              <button class="feed-tab" data-feed="trending">Trending</button>
+              <button class="feed-tab" data-feed="expensive">Expensive</button>
+              <button class="feed-tab" data-feed="watchlist">Watchlist</button>
+            </div>
+            <input id="feedSearch" class="feed-search" type="search" placeholder="Search coins or $ticker...">
+          </div>
+          <div id="feedGrid" class="coin-grid"></div>
+          <div id="emptyFeed" class="empty-state hidden">
+            <div class="empty-icon">◈</div>
+            <h3>No currencies yet</h3>
+            <p>Be the first to create one!</p>
+            <button class="primary-btn" data-goto="create">Create currency</button>
+          </div>
+        </div>
+          <div id="productFeedContent" class="product-feed-placeholder hidden"><div class="product-feed-heading"><div class="eyebrow purple-text">COMMUNITY MARKET</div><h3>Product Feed</h3><p class="muted">Discover products designed by GRIND companies. Purchases are not enabled yet.</p></div><div id="publishedProductFeed" class="published-product-grid"><div class="empty-state"><div class="empty-icon">▦</div><h3>No published products yet</h3><p>Products published by companies will appear here.</p></div></div></div>
+          <div id="companyFeedContent" class="hidden">
+            <div class="feed-toolbar">
+              <div class="feed-tabs">
+                <button type="button" class="feed-tab active" data-company-sort="top_price">Top Price</button>
+                <button type="button" class="feed-tab" data-company-sort="top_sales">Top Sales</button>
+                <button type="button" class="feed-tab" data-company-sort="most_owned">Most Owned</button>
+                <button type="button" class="feed-tab" data-company-sort="newest">Newest</button>
+              </div>
+              <input id="companyFeedSearch" class="feed-search" type="search" placeholder="Search companies or line (CPU/GPU/MOBO/PC)...">
+            </div>
+            <div id="companyFeedGrid" class="coin-grid"></div>
+            <div id="emptyCompanyFeed" class="empty-state hidden">
+              <div class="empty-icon">▣</div>
+              <h3>No companies on the market yet</h3>
+              <p>Create a company or search with another keyword.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE ACTIVITY -->
+        <section id="page-live" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">LIVE MARKET ACTIVITY</div>
+              <h3>Live</h3>
+              <p class="muted">Trades, new coins, videos and activity from across GRIND.</p>
+            </div>
+          </div>
+          <div class="feed-tabs" id="liveFilterTabs">
+            <button type="button" class="feed-tab active" data-live="all">All</button>
+            <button type="button" class="feed-tab" data-live="personal">Personal</button>
+            <button type="button" class="feed-tab" data-live="trades">Trades</button>
+            <button type="button" class="feed-tab" data-live="coins">New Coins</button>
+            <button type="button" class="feed-tab" data-live="videos">Videos</button>
+          </div>
+          <div id="liveFeedList" class="live-feed-list"></div>
+          <div id="emptyLiveFeed" class="empty-state hidden">
+            <div class="empty-icon">◉</div>
+            <h3>No live activity yet</h3>
+            <p>Trades and new currencies will appear here in real time.</p>
+          </div>
+        </section>
+
+        <!-- CREATE -->
+        <section id="page-create" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">NEW CURRENCY</div>
+              <h3>Create your coin</h3>
+              <p class="muted">Member: max 1 coin. PRO: max 2. Premium: max 3. Always starts at $1.</p>
+            </div>
+          </div>
+          <div class="form-card">
+            <form id="createForm">
+              <div class="form-grid">
+                <label>Name<input id="coinName" required maxlength="30" placeholder="e.g. MoonDoge"></label>
+                <label>Ticker<input id="coinTicker" required maxlength="6" placeholder="e.g. MDOG" style="text-transform:uppercase"></label>
+              </div>
+              <label>Description<textarea id="coinDescription" rows="3" maxlength="200" placeholder="Why is this cool?"></textarea></label>
+              <div class="image-upload">
+                <div class="coin-logo big" id="coinPreview" title="Click to upload logo">＋</div>
+                <label class="upload-link" for="coinImage">Upload logo (optional)</label>
+                <input id="coinImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+              </div>
+              <button class="primary-btn full" type="submit">Create currency ($1 start)</button>
+              <p id="createMessage" class="form-message"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- MONEY / PORTFOLIO -->
+        <section id="page-money" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">PORTFOLIO</div>
+              <h3>Your money</h3>
+            </div>
+          </div>
+          <div class="portfolio-summary">
+            <div><span class="muted tiny">AVAILABLE CASH</span><strong id="moneyCash">$15.00</strong></div>
+            <div><span class="muted tiny">PORTFOLIO VALUE</span><strong id="portfolioValue">$0.00</strong></div>
+            <div><span class="muted tiny">NET WORTH</span><strong id="totalValue">$15.00</strong></div>
+          </div>
+          <div id="personalPnlSummary" class="personal-pnl-bar hidden"></div>
+          <div id="holdingsList" class="holdings-list"></div>
+          <div id="emptyHoldings" class="empty-state">
+            <div class="empty-icon">▣</div>
+            <h3>No coins yet</h3>
+            <p>Check the feed and buy something!</p>
+            <button class="primary-btn" data-goto="feed">Go to feed</button>
+          </div>
+        </section>
+
+        <!-- GLOBAL LEADERBOARDS -->
+        <section id="page-global" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">GLOBAL</div>
+              <h3>Leaderboards</h3>
+              <p class="muted">Top 100 players. Updated live.</p>
+            </div>
+          </div>
+          <div class="feed-tabs" id="leaderboardTabs">
+            <button class="feed-tab active" data-lb="networth">Net Worth</button>
+            <button class="feed-tab" data-lb="time">Time Played</button>
+            <button class="feed-tab" data-lb="weekly">Weekly Profit</button>
+            <button class="feed-tab" data-lb="creators">Creators</button>
+          </div>
+          <div id="lbWeeklyControls" class="lb-weekly-controls hidden">
+            <div id="lbWeeklySpotlights" class="lb-weekly-spotlights"></div>
+            <div class="feed-tabs lb-weekly-subtabs" id="lbWeeklySortTabs">
+              <button type="button" class="feed-tab active" data-lb-weekly="up">Most % Up</button>
+              <button type="button" class="feed-tab" data-lb-weekly="down">Down Most %</button>
+            </div>
+          </div>
+          <div id="lbMovementBanner" class="lb-movement-banner hidden"></div>
+          <div id="leaderboardList" class="leaderboard-list"></div>
+          <div id="emptyLeaderboard" class="empty-state hidden">
+            <p>No players yet.</p>
+          </div>
+        </section>
+
+        <!-- PLAY (Shorts / Reels Feed) -->
+        <section id="page-play" class="page hidden">
+          <div class="play-shell">
+            <header class="play-topbar">
+              <div class="play-topbar-left">
+                <button type="button" class="zoom-btn play-back-btn" id="playBackBtn">← Back</button>
+                <div class="play-brand-chip">
+                  <span class="play-brand-icon">▶</span>
+                  <strong>Play</strong>
+                  <span class="play-earn-pill">$2/like · $0.50/view · +$0.50 liking</span>
+                </div>
+              </div>
+              <div class="play-topbar-right">
+                <button type="button" class="zoom-btn" id="playRefreshBtn" title="Refresh feed">↻</button>
+                <button type="button" class="zoom-btn" id="playMuteAllBtn">🔊 Sound On</button>
+              </div>
+            </header>
+
+            <div class="play-stage-wrap">
+              <div id="playFeedTrack" class="play-feed-track"></div>
+              <div class="play-nav-arrows" aria-label="Scroll shorts">
+                <button type="button" class="play-arrow-btn" id="playPrevBtn" title="Previous short">▲</button>
+                <button type="button" class="play-arrow-btn" id="playNextBtn" title="Next short">▼</button>
+              </div>
+            </div>
+
+            <aside id="playCommentsDrawer" class="play-comments-drawer hidden" aria-label="Video comments">
+              <div class="play-comments-head">
+                <div>
+                  <div class="eyebrow purple-text">VIDEO COMMENTS</div>
+                  <h4 id="playCommentsTitle" style="margin:2px 0 0;">Comments</h4>
+                </div>
+                <button type="button" class="zoom-btn" id="playCloseCommentsBtn" aria-label="Close comments">✕</button>
+              </div>
+              <div id="playCommentsList" class="play-comments-list"></div>
+              <div id="playCommentGifPreview" class="comment-gif-preview hidden"></div>
+              <div id="playCommentGifPicker" class="comment-gif-picker hidden" role="region" aria-label="Choose a GIF">
+                <div class="comment-gif-picker-head">
+                  <strong>Choose a GIF</strong>
+                  <button type="button" class="zoom-btn" id="playCloseCommentGifBtn" aria-label="Close GIF picker">✕</button>
+                </div>
+                <input id="playCommentGifSearchInput" class="feed-search dm-coin-search" type="search" maxlength="120" placeholder="Search GIPHY GIFs or paste a giphy.com link...">
+                <div id="playCommentGifStatus" class="dm-gif-status hidden"></div>
+                <div id="playCommentGifGrid" class="dm-gif-grid"></div>
+                <div class="dm-giphy-attr">Powered by GIPHY</div>
+              </div>
+              <form id="playCommentForm" class="play-comment-form">
+                <button type="button" id="playCommentPlusBtn" class="dm-plus-btn comment-plus-btn" title="Add GIF" aria-label="Add GIF" aria-expanded="false">＋</button>
+                <input id="playCommentInput" type="text" maxlength="400" autocomplete="off" placeholder="Add a comment or GIF...">
+                <button type="submit" id="playCommentSendBtn" class="primary-btn">Post</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <!-- COMPANY -->
+        <section id="page-company" class="page hidden">
+          <div id="companyIncomingTransfers" class="company-incoming-transfers hidden"></div>
+          <div id="companyOnboarding" class="company-onboarding">
+            <div class="company-welcome-orb">▣</div>
+            <div class="eyebrow purple-text">YOUR BUSINESS STARTS HERE</div>
+            <h3>No Company</h3><p class="muted">You don't own a company yet. Create one below to unlock CPU research and product design.</p><h4>Start your first company</h4>
+            <p class="muted">Build a company, develop products and become part of the GRIND supply chain. Company creation is free during Early Access.</p>
+            <form id="companyCreateForm" class="form-card company-create-card">
+              <label>Company name
+                <input id="companyNameInput" type="text" maxlength="40" minlength="2" required placeholder="e.g. Nova Silicon">
+              </label>
+              <label>Description
+                <textarea id="companyDescriptionInput" rows="3" maxlength="500" placeholder="What does your company make?"></textarea>
+              </label>
+              <div class="company-logo-upload-row">
+                <div class="company-logo-preview" id="companyLogoPreview">＋</div>
+                <div>
+                  <label class="upload-link" for="companyLogoInput">Upload company logo</label>
+                  <input id="companyLogoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                  <p class="muted tiny">PNG, JPG or WEBP · Optional</p>
+                </div>
+              </div>
+              <div class="company-line-choice">
+                <div class="eyebrow">CHOOSE YOUR PRODUCT LINE</div>
+                <div class="company-line-card selected">
+                  <span class="company-line-icon">▦</span>
+                  <span><strong>CPU Manufacturing</strong><small>Design &amp; manufacture CPUs</small></span>
+                  <span class="company-line-check">✓</span>
+                </div>
+                <div class="company-line-card">
+                  <span class="company-line-icon">◈</span>
+                  <span><strong>GPU · Motherboard · PC</strong><small>Available in Company Selector (1 per type)</small></span>
+                  <span class="company-coming">LIVE</span>
+                </div>
+              </div>
+              <button class="primary-btn full" id="companyCreateBtn" type="submit">Create Company · FREE</button>
+              <p id="companyCreateMessage" class="form-message" aria-live="polite"></p>
+            </form>
+          </div>
+          <div id="companyDashboard" class="hidden">
+            <div class="company-hero-panel">
+              <div class="company-identity">
+                <div id="companyDashboardLogo" class="company-dashboard-logo" title="Open Logo Studio">▣</div>
+                <div><div class="eyebrow purple-text">YOUR COMPANY</div><h3 id="companyDashboardName">Company</h3><p id="companyDashboardDescription" class="muted"></p></div>
+              </div>
+              <div class="company-hero-actions">
+                <button type="button" class="zoom-btn company-hero-logo-btn" id="companyHeroLogoBtn">✦ Custom Logo</button>
+                <span class="company-cpu-chip">CPU MANUFACTURER</span>
+              </div>
+            </div>
+            <div class="company-dashboard-tabs">
+              <button type="button" class="company-dashboard-tab active" data-company-tab="money">Money</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="stocks">Stocks</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="research">Research</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="products">Products</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="ads">ADS</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="logo">Logo</button>
+              <button type="button" class="company-dashboard-tab" data-company-tab="settings">Settings</button>
+            </div>
+            <div class="company-dashboard-panel" id="companyPanelMoney">
+              <div class="company-stat-grid">
+                <article class="company-stat-card"><span>Total money made</span><strong id="companyRevenue">$0.00</strong><small>Lifetime company revenue</small></article>
+                <article class="company-stat-card"><span>Company value change</span><strong id="companyChange">0.00%</strong><small>Company performance</small></article>
+                <article class="company-stat-card"><span>Total costs</span><strong id="companyCosts">$0.00</strong><small>Lifetime company costs</small></article>
+                <article class="company-stat-card"><span>Products created</span><strong id="companyProductCount">0</strong><small>Across all product lines</small></article>
+              </div>
+              <div class="company-dashboard-section">
+                <div class="company-section-heading"><div><div class="eyebrow purple-text">FINANCIAL OVERVIEW</div><h4>Company money</h4></div></div>
+                <p class="muted">Your company's revenue, costs and performance will be tracked here as products are designed and sold.</p>
+              </div>
+            </div>
+            <div class="company-dashboard-panel hidden" id="companyPanelStocks"></div>
+            <div class="company-dashboard-panel hidden" id="companyPanelResearch"><div class="company-dashboard-section research-section"><div class="company-section-heading"><div><div class="eyebrow purple-text">CPU DEVELOPMENT</div><h4>Research tree</h4><p class="muted">Unlock components before using them in your designs.</p></div><span class="company-count-chip">CPU RESEARCH</span></div><div class="research-tree" id="cpuResearchTree"><div class="research-tree-world" id="cpuResearchWorld" style="width:1550px;height:2500px"><svg class="research-tree-lines" viewBox="0 0 1550 2500" preserveAspectRatio="none">
+<path d="M650 210 L650 240 L150 240 L150 231 M650 240 L400 240 L400 231 M650 240 L650 231 M650 240 L900 240 L900 231 M650 240 L1150 240 L1150 231 M650 240 L1375 240 L1375 231 M650 240 L1375 240 L1375 381 M1375 381 L1375 470 M650 240 L1441 240 L1441 712 M1441 862 L1441 951 M1441 1101 L1441 1190 M1441 1340 L1441 1431 M150 381 L150 470 M150 620 L150 712 M400 381 L400 470 M400 620 L400 712 M400 862 L400 951 M400 1101 L400 1190 M400 1340 L400 1431 M650 381 L650 470 M650 620 L650 712 M650 862 L650 951 M650 1101 L650 1190 M900 381 L900 470 M900 620 L900 712 M900 862 L900 951 M1150 381 L1150 470 M1375 381 L1375 470 M400 2092 L400 2250 L400 2425 M650 1757 L650 2000 L650 2150 L650 2300 L650 2450"/>
+</svg>
+<button type="button" class="research-node baseline unlocked" data-research-node="baseline_cpu" style="--node-x:50%;--node-y:7.5%"><span class="research-hex"><b>CPU</b></span><strong>Baseline CPU</strong><small>Unlocked · Gray Plastic Body</small></button>
+<button type="button" class="research-node" data-research-node="silicon_body" style="--node-x:11.54%;--node-y:17%"><span class="research-hex"><b>Si</b></span><strong>Silicon Body</strong><small>$350 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="carbon_fiber_body" style="--node-x:11.54%;--node-y:30.3%"><span class="research-hex"><b>CF</b></span><strong>Carbon Fiber Body</strong><small>$5,500 research · 18 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="titanium_body" style="--node-x:11.54%;--node-y:43.7%"><span class="research-hex"><b>Ti</b></span><strong>Titanium Body</strong><small>$12,000 research · 32 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="simple_1_core" style="--node-x:30.77%;--node-y:17%"><span class="research-hex"><b>1C</b></span><strong>Simple 1 Core</strong><small>$75 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="two_cores" style="--node-x:30.77%;--node-y:30.3%"><span class="research-hex"><b>2C</b></span><strong>2 Cores</strong><small>$175 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="four_cores" style="--node-x:30.77%;--node-y:43.7%"><span class="research-hex"><b>4C</b></span><strong>4 Cores</strong><small>$400 research · 12 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="eight_cores" style="--node-x:30.77%;--node-y:57%"><span class="research-hex"><b>8C</b></span><strong>8 Cores</strong><small>$2,400 research · 18 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="sixteen_cores" style="--node-x:30.77%;--node-y:70.3%"><span class="research-hex"><b>16C</b></span><strong>16 Cores</strong><small>$3,600 research · 24 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="thirty_two_cores" style="--node-x:30.77%;--node-y:83.7%"><span class="research-hex"><b>32C</b></span><strong>32 Cores</strong><small>$6,800 research · 38 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="sixty_four_cores" style="--node-x:30.77%;--node-y:90%"><span class="research-hex"><b>64C</b></span><strong>64 Cores</strong><small>$14,000 research · 54 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="eighty_six_cores" style="--node-x:30.77%;--node-y:97%"><span class="research-hex"><b>86C</b></span><strong>86 Cores</strong><small>$24,000 research · 70 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="simple_4_threads" style="--node-x:50%;--node-y:17%"><span class="research-hex"><b>4T</b></span><strong>Simple 4 Threads</strong><small>$75 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="six_threads" style="--node-x:50%;--node-y:30.3%"><span class="research-hex"><b>6T</b></span><strong>6 Threads</strong><small>$150 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="eight_threads" style="--node-x:50%;--node-y:43.7%"><span class="research-hex"><b>8T</b></span><strong>8 Threads</strong><small>$350 research</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="twelve_threads" style="--node-x:50%;--node-y:57%"><span class="research-hex"><b>12T</b></span><strong>12 Threads</strong><small>$800 research · 12 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="eighteen_threads" style="--node-x:50%;--node-y:70.3%"><span class="research-hex"><b>18T</b></span><strong>18 Threads</strong><small>$1,200 research · 18 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="thirty_six_threads" style="--node-x:50%;--node-y:80%"><span class="research-hex"><b>36T</b></span><strong>36 Threads</strong><small>$2,600 research · 28 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="sixty_four_threads" style="--node-x:50%;--node-y:86%"><span class="research-hex"><b>64T</b></span><strong>64 Threads</strong><small>$5,000 research · 40 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="eighty_six_threads" style="--node-x:50%;--node-y:92%"><span class="research-hex"><b>86T</b></span><strong>86 Threads</strong><small>$8,000 research · 52 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="one_hundred_eight_threads" style="--node-x:50%;--node-y:98%"><span class="research-hex"><b>108T</b></span><strong>108 Threads</strong><small>$12,000 research · 64 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="built_in_cooling" style="--node-x:69.23%;--node-y:17%"><span class="research-hex"><b>COOL</b></span><strong>Built-In Cooling</strong><small>$1,500 research · 10 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="great_cooling" style="--node-x:69.23%;--node-y:30.3%"><span class="research-hex"><b>G+</b></span><strong>Great Cooling</strong><small>$3,500 research · 18 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="vapor_chamber_cooling" style="--node-x:69.23%;--node-y:43.7%"><span class="research-hex"><b>VC</b></span><strong>Vapor Chamber Cooling</strong><small>$6,000 research · 22 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="ultra_cooling" style="--node-x:69.23%;--node-y:57%"><span class="research-hex"><b>ULTRA</b></span><strong>Ultra Cooling</strong><small>$8,000 research · 28 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="simple_graphics_integration" style="--node-x:74.19%;--node-y:17%"><span class="research-hex"><b>iGPU</b></span><strong>Simple Graphic Integration</strong><small>$1,200 research · 8 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="advanced_graphics_integration" style="--node-x:74.19%;--node-y:30.3%"><span class="research-hex"><b>GFX+</b></span><strong>Advanced Graphic Integration</strong><small>$4,500 research · 22 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="basic_ai_integration" style="--node-x:88.71%;--node-y:17%"><span class="research-hex"><b>AI</b></span><strong>Basic AI Integration</strong><small>$2,400 research · 14 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="advanced_ai_integration" style="--node-x:88.71%;--node-y:30.3%"><span class="research-hex"><b>AI+</b></span><strong>Advanced AI Integration</strong><small>$6,800 research · 22 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="basic_v_cache" style="--node-x:93%;--node-y:43.7%"><span class="research-hex"><b>VC</b></span><strong>Basic V-Cache</strong><small>$2,600 research · 18 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="advanced_v_cache" style="--node-x:93%;--node-y:57%"><span class="research-hex"><b>VC+</b></span><strong>Advanced V-Cache</strong><small>$4,500 research · 46 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="basic_3d_v_cache" style="--node-x:93%;--node-y:70.3%"><span class="research-hex"><b>3D</b></span><strong>Basic 3D V-Cache</strong><small>$4,750 research · 48 Score</small><em class="research-node-status">LOCKED</em></button>
+<button type="button" class="research-node" data-research-node="advanced_3d_v_cache" style="--node-x:93%;--node-y:83.7%"><span class="research-hex"><b>3D+</b></span><strong>Advanced 3D V-Cache</strong><small>$8,000 research · 68 Score</small><em class="research-node-status">LOCKED</em></button>
+</div><div class="research-tree-controls"><button type="button" data-research-zoom="out" aria-label="Zoom out">−</button><button type="button" data-research-zoom="reset">Reset</button><button type="button" data-research-zoom="in" aria-label="Zoom in">+</button></div></div><p id="companyResearchMessage" class="form-message" aria-live="polite"></p></div></div><div class="company-dashboard-panel hidden" id="companyPanelAds"></div>
+            <div class="company-dashboard-panel hidden" id="companyPanelProducts">
+              <div class="company-dashboard-section">
+                <div class="company-section-heading"><div><div class="eyebrow purple-text">CATALOGUE</div><h4>All products</h4></div><span class="company-count-chip">0 PRODUCTS</span></div>
+                <div id="companyProductList" class="company-product-list"><div class="company-empty-products"><span>▦</span><strong>No products yet</strong><p class="muted">Design your first CPU to get started.</p></div></div><div id="companyProductDetails" class="company-product-details hidden"></div>
+              </div>
+            </div>
+            <div class="company-dashboard-panel hidden" id="companyPanelLogo">
+              <div class="company-dashboard-section logo-studio-panel">
+                <div class="logo-studio-topbar">
+                  <div>
+                    <div class="eyebrow purple-text">COMPANY BRANDING</div>
+                    <h4>Logo Studio</h4>
+                    <p class="muted tiny">Combine shapes, cutouts, and letters — printed cleanly on top of every CPU you design.</p>
+                  </div>
+                  <div class="logo-studio-top-actions">
+                    <button type="button" class="zoom-btn" id="logoUndoBtn">↩ Undo</button>
+                    <button type="button" class="primary-btn" id="logoSavePrintBtn">Save &amp; Print on CPUs</button>
+                  </div>
+                </div>
+                <div class="logo-studio-presets">
+                  <span class="muted tiny">Starters:</span>
+                  <button type="button" class="zoom-btn" data-logo-preset="bitten">Apple Bite</button>
+                  <button type="button" class="zoom-btn" data-logo-preset="silicon_crest">Silicon Crest</button>
+                  <button type="button" class="zoom-btn" data-logo-preset="apex_mono">Apex Emblem</button>
+                  <button type="button" class="zoom-btn" data-logo-preset="orbital">Orbital</button>
+                  <button type="button" class="zoom-btn" data-logo-preset="blank">Blank Canvas</button>
+                </div>
+                <div class="logo-studio-grid">
+                  <div class="logo-studio-stage-col">
+                    <div class="logo-studio-canvas-wrap">
+                      <canvas id="logoStudioCanvas" class="logo-studio-canvas" width="512" height="512"></canvas>
+                      <div class="logo-studio-hint muted tiny">Drag shapes to move (auto-snaps to center) · Drag blue square to resize · Drag top purple dot to rotate</div>
+                    </div>
+                    <div class="logo-cpu-stamp-card">
+                      <div class="logo-cpu-stamp-head">
+                        <div>
+                          <div class="eyebrow purple-text">LIVE PRINT PREVIEW</div>
+                          <strong>Printed on Top of CPU</strong>
+                        </div>
+                        <div class="logo-cpu-tone-tabs">
+                          <button type="button" class="active" data-logo-cpu-tone="gray">Gray</button>
+                          <button type="button" data-logo-cpu-tone="silicon">Silicon</button>
+                          <button type="button" data-logo-cpu-tone="carbon">Carbon</button>
+                        </div>
+                      </div>
+                      <canvas id="logoCpuStampPreview" class="logo-cpu-stamp-canvas" width="220" height="220"></canvas>
+                    </div>
+                  </div>
+                  <div class="logo-studio-controls-col">
+                    <div class="logo-studio-box">
+                      <div class="eyebrow purple-text">ADD SHAPES</div>
+                      <div id="logoShapePalette" class="logo-shape-palette"></div>
+                    </div>
+                    <div class="logo-studio-box">
+                      <div class="eyebrow purple-text">LAYERS (TOP TO BOTTOM)</div>
+                      <div id="logoLayerStack" class="logo-layer-stack"></div>
+                    </div>
+                    <div class="logo-studio-box">
+                      <div class="eyebrow purple-text">SELECTED SHAPE</div>
+                      <p id="logoNoSelectionMsg" class="muted tiny" style="margin:6px 0 0;">Click any shape on the canvas or in Layers to customize size, color, rotation, or Cutout bite mode.</p>
+                      <div id="logoLayerInspector" class="logo-inspector hidden">
+                        <label id="logoTextRow" class="hidden">Letter / Text<input id="logoLayerText" maxlength="12" placeholder="G"></label>
+                        <div class="logo-mode-row">
+                          <span class="muted tiny">Blend Mode</span>
+                          <div class="logo-mode-tabs">
+                            <button type="button" class="active" data-logo-mode="solid">Solid Fill</button>
+                            <button type="button" data-logo-mode="cutout">Cutout (Bite)</button>
+                          </div>
+                        </div>
+                        <div>
+                          <span class="muted tiny">Color</span>
+                          <div class="logo-color-row">
+                            <div id="logoColorSwatches" class="logo-swatches"></div>
+                            <input type="color" id="logoLayerColor" value="#f8fafc" aria-label="Custom shape color">
+                          </div>
+                        </div>
+                        <div class="logo-slider-grid">
+                          <label><span>Size <strong id="logoLayerSizeOut">160px</strong></span><input type="range" id="logoLayerSize" min="26" max="460" value="160"></label>
+                          <label><span>Rotate <strong id="logoLayerRotOut">0°</strong></span><input type="range" id="logoLayerRot" min="0" max="359" value="0"></label>
+                          <label><span>Width %</span><input type="range" id="logoLayerScaleX" min="30" max="220" value="100"></label>
+                          <label><span>Height %</span><input type="range" id="logoLayerScaleY" min="30" max="220" value="100"></label>
+                          <label class="logo-slider-full"><span>Opacity</span><input type="range" id="logoLayerOpacity" min="10" max="100" value="100"></label>
+                        </div>
+                        <div class="logo-layer-actions">
+                          <button type="button" class="zoom-btn" id="logoLayerCenterBtn">Center</button>
+                          <button type="button" class="zoom-btn" id="logoLayerDupBtn">Duplicate</button>
+                          <button type="button" class="zoom-btn" id="logoLayerUpBtn">↑ Forward</button>
+                          <button type="button" class="zoom-btn" id="logoLayerDownBtn">↓ Back</button>
+                          <button type="button" class="deny-btn" id="logoLayerDeleteBtn">Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                    <p id="logoStudioMessage" class="form-message" aria-live="polite"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="company-dashboard-panel hidden" id="companyPanelSettings">
+              <div class="company-dashboard-section">
+                <div class="eyebrow purple-text">COMPANY PROFILE</div><h4>Settings</h4>
+                <form id="companySettingsForm" class="company-settings-form">
+                  <label>Company name<input id="companySettingsName" maxlength="40" minlength="2" required></label>
+                  <label>Description<textarea id="companySettingsDescription" rows="3" maxlength="500"></textarea></label>
+                  <div class="company-logo-upload-row">
+                    <div class="company-logo-preview" id="companySettingsLogoPreview">＋</div>
+                    <div><label class="upload-link" for="companySettingsLogoInput">Change company logo</label><input id="companySettingsLogoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden><p class="muted tiny">PNG, JPG or WEBP</p></div>
+                  </div>
+                  <button type="submit" class="primary-btn" id="companySaveSettingsBtn">Save changes</button>
+                  <p id="companySettingsMessage" class="form-message" aria-live="polite"></p>
+                </form>
+              </div>
+              <div class="company-danger-zone">
+                <div class="eyebrow danger-text">DANGER ZONE</div><h4>Company ownership & deletion</h4>
+                <div class="company-danger-action">
+                  <div><strong>Transfer company</strong><p class="muted tiny">Send ownership to another GRIND user. They must accept before ownership changes.</p></div>
+                  <form id="companyTransferForm" class="company-transfer-form"><input id="companyTransferUsername" type="text" maxlength="32" required placeholder="Recipient username"><button class="zoom-btn" id="companyTransferBtn" type="submit">Send request</button></form>
+                  <p id="companyTransferMessage" class="form-message" aria-live="polite"></p>
+                  <div id="companyOutgoingTransfer" class="company-transfer-status hidden"></div>
+                </div>
+                <div class="company-danger-action company-delete-action">
+                  <div><strong>Delete company</strong><p class="muted tiny">Permanently delete this company. This cannot be undone.</p></div>
+                  <button type="button" class="company-delete-btn" id="companyDeleteBtn">Delete company</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="page-company-design" class="page hidden"><div id="companyDesignNoCompany" class="company-empty-page"><div class="eyebrow purple-text">COMPANY WORKSPACE</div><div class="company-empty-icon">✎</div><h3>No Company</h3><p class="muted">Create a company before designing products.</p><button type="button" class="primary-btn" data-goto="company">Go to Company</button></div><div id="cpuDesigner" class="cpu-designer hidden"><div class="section-head"><div><div class="eyebrow purple-text">CPU MANUFACTURING</div><h3>Design a CPU</h3><p class="muted">Build your first processor from researched components.</p></div><span class="company-cpu-chip">PRODUCT DESIGNER</span></div><div class="cpu-designer-layout"><div class="cpu-preview-panel"><div class="cpu-preview-toolbar"><span>3D PREVIEW</span><small>Drag to orbit · Scroll to zoom</small></div><div class="cpu-preview-stage" id="cpuPreviewStage"><span id="cpuAiPreviewBadge" class="cpu-ai-preview-badge hidden">AI</span><div class="cpu-model" id="cpuModel" aria-label="Rotatable gray plastic CPU"><div class="cpu-top-face"><span>GRIND</span><b>CPU</b><small>BASELINE</small></div><div class="cpu-side-face"></div><div class="cpu-pins"></div></div></div><div class="cpu-preview-caption">Simple gray plastic CPU body</div></div><div class="cpu-options-panel"><div class="cpu-menu-tabs" role="tablist"><button type="button" class="active" data-cpu-menu="body">Body</button><button type="button" data-cpu-menu="threads">Threads</button><button type="button" data-cpu-menu="cores">Cores</button><button type="button" data-cpu-menu="cooling">Cooling</button><button type="button" data-cpu-menu="graphics">Graphics</button><button type="button" data-cpu-menu="ai">AI</button><button type="button" data-cpu-menu="vcache">V-Cache</button></div><div id="cpuMenuBody" class="cpu-menu-content"><h4>CPU Body</h4><div class="cpu-component-option selected" id="cpuGrayBodyOption"><span class="cpu-component-icon">▦</span><span><strong>Simple Gray Plastic</strong><small>Free</small></span><button type="button" class="zoom-btn" data-cpu-toggle="gray_body">Add</button></div><div id="cpuOption_silicon" class="cpu-component-option locked"></div><div id="cpuOption_carbon_fiber" class="cpu-component-option locked"></div><div id="cpuOption_titanium_body" class="cpu-component-option locked"></div></div><div id="cpuMenuThreads" class="cpu-menu-content hidden"><h4>Threads</h4><div id="cpuThreadsOption" class="cpu-component-option locked"></div><div id="cpuOption_six_threads" class="cpu-component-option locked"></div><div id="cpuOption_eight_threads" class="cpu-component-option locked"></div><div id="cpuOption_twelve_threads" class="cpu-component-option locked"></div><div id="cpuOption_eighteen_threads" class="cpu-component-option locked"></div><div id="cpuOption_thirty_six_threads" class="cpu-component-option locked"></div><div id="cpuOption_sixty_four_threads" class="cpu-component-option locked"></div><div id="cpuOption_eighty_six_threads" class="cpu-component-option locked"></div><div id="cpuOption_one_hundred_eight_threads" class="cpu-component-option locked"></div></div><div id="cpuMenuCores" class="cpu-menu-content hidden"><h4>Cores</h4><div id="cpuCoresOption" class="cpu-component-option locked"></div><div id="cpuOption_two_cores" class="cpu-component-option locked"></div><div id="cpuOption_four_cores" class="cpu-component-option locked"></div><div id="cpuOption_eight_cores" class="cpu-component-option locked"></div><div id="cpuOption_sixteen_cores" class="cpu-component-option locked"></div><div id="cpuOption_thirty_two_cores" class="cpu-component-option locked"></div><div id="cpuOption_sixty_four_cores" class="cpu-component-option locked"></div><div id="cpuOption_eighty_six_cores" class="cpu-component-option locked"></div></div><div id="cpuMenuCooling" class="cpu-menu-content hidden"><h4>Cooling</h4><div id="cpuOption_built_in_cooling" class="cpu-component-option locked"></div><div id="cpuOption_great_cooling" class="cpu-component-option locked"></div><div id="cpuOption_vapor_chamber" class="cpu-component-option locked"></div><div id="cpuOption_ultra_cooling" class="cpu-component-option locked"></div></div><div id="cpuMenuGraphics" class="cpu-menu-content hidden"><h4>Graphics</h4><div id="cpuOption_simple_graphics" class="cpu-component-option locked"></div><div id="cpuOption_advanced_graphics" class="cpu-component-option locked"></div></div><div id="cpuMenuAi" class="cpu-menu-content hidden"><h4>AI</h4><div id="cpuOption_basic_ai" class="cpu-component-option locked"></div><div id="cpuOption_advanced_ai" class="cpu-component-option locked"></div></div><div id="cpuMenuVcache" class="cpu-menu-content hidden"><h4>V-Cache</h4><p class="muted tiny">Extra cache stacked or integrated into the CPU package.</p><div id="cpuOption_basic_v_cache" class="cpu-component-option locked"></div><div id="cpuOption_advanced_v_cache" class="cpu-component-option locked"></div><div id="cpuOption_basic_3d_v_cache" class="cpu-component-option locked"></div><div id="cpuOption_advanced_3d_v_cache" class="cpu-component-option locked"></div></div><div class="cpu-design-summary"><div><span>Draft save cost</span><strong id="cpuDesignCost">Free ($0)</strong></div><div><span>Product value / unit</span><strong id="cpuDesignValue">$0</strong></div></div><label class="cpu-design-label">CPU name<input id="cpuProductName" maxlength="48" value="" placeholder="Enter CPU name (e.g. Nova X1)"></label><label class="cpu-design-label">Starting price ($)<input id="cpuProductPrice" type="number" min="1" step="1" value="100"></label><div class="cpu-design-summary"><div><span>Score / Tier</span><strong id="cpuDesignScore">0 · F</strong></div></div><p id="cpuDesignResearchGate" class="form-message">Saving a draft costs $0. Produce stock from Products for the product value per unit.</p><button type="button" class="primary-btn full" id="finishCpuBtn">Save as draft · Free</button><p id="cpuDesignMessage" class="form-message" aria-live="polite"></p></div></div></div></section>
+<section id="page-company-products" class="page hidden">
+          <div class="company-empty-page"><div class="eyebrow purple-text">COMPANY WORKSPACE</div><div class="company-empty-icon">▦</div><h3>Products</h3><p class="muted">Your manufactured products will appear here.</p></div>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section id="page-account" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">PROFILE</div>
+              <h3>Account settings</h3>
+            </div>
+          </div>
+          <div class="form-card">
+            <div class="account-identity-card" id="accountIdentityCard">
+              <div class="avatar account-identity-av" id="accountIdentityAvatar">G</div>
+              <div class="account-identity-meta">
+                <div class="account-identity-name" id="accountIdentityName">Trader</div>
+                <div id="accountIdentityTitleSlot" class="account-title-slot"></div>
+                <div id="accountIdentityFollowStats" class="muted tiny account-identity-follow-stats">0 Followers · 0 Following</div>
+              </div>
+              <button type="button" class="zoom-btn" data-goto="marketplace">Open Crates →</button>
+            </div>
+            <div class="account-titles-box" id="accountTitlesSection">
+              <div class="account-titles-head">
+                <div>
+                  <h4>Equipped Title</h4>
+                  <p class="muted tiny" id="accountTitlesSub">Unlock titles from Season 1 Crates in Store → Marketplace.</p>
+                </div>
+                <span class="muted tiny" id="accountTitlesCount">0 / 12 unlocked</span>
+              </div>
+              <div id="accountTitlesGrid" class="account-titles-grid"></div>
+            </div>
+            <div class="account-titles-box" id="accountPlayVideosSection" style="margin-top:14px;">
+              <div class="account-titles-head">
+                <div>
+                  <h4>Your Play Videos</h4>
+                  <p class="muted tiny">Shorts &amp; videos you published in Play ($2/like · $0.50/unique view · $10/follower).</p>
+                </div>
+                <span class="muted tiny" id="accountPlayVideosCount">0 videos</span>
+              </div>
+              <div id="accountPlayVideosGrid" class="account-play-videos-grid"></div>
+            </div>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div class="username-edit">
+              <label>Username<input id="accountUsername" minlength="3" maxlength="20" autocomplete="nickname" placeholder="Pick a username"></label>
+              <button class="primary-btn" id="saveUsernameBtn" type="button">Save username</button>
+            </div>
+            <p class="muted tiny">3–20 characters: letters, numbers and underscore. Shown on the leaderboard and in chart bubbles.</p>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div class="profile-edit">
+              <label class="profile-upload" for="profileImage">
+                <img id="profilePreview" alt="" class="hidden">
+                <span id="profileInitial">G</span>
+                <i>＋</i>
+              </label>
+              <div>
+                <strong>Profile picture</strong>
+                <p class="muted tiny">PNG, JPG, WEBP. Shows in chart bubbles!</p>
+                <label class="upload-link" for="profileImage">Change picture</label>
+                <input id="profileImage" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+              </div>
+            </div>
+            <div class="account-user-color-setting" style="margin-top:14px;padding:14px;border:1px solid rgba(168,85,247,.25);border-radius:12px;background:rgba(124,58,237,.06);">
+              <label for="accountUserColor" style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700;">
+                <span>User Color</span>
+                <input type="color" id="accountUserColor" value="#a78bfa" aria-label="Choose your GrindWorld user color" style="width:54px;height:38px;padding:3px;border:1px solid rgba(255,255,255,.2);border-radius:9px;background:transparent;cursor:pointer;">
+              </label>
+              <p class="muted tiny" style="margin:7px 0 0;">Choose the color used for your user region and hexagons in GrindWorld.</p>
+            </div>
+            <div id="infCashSection" class="hidden" style="margin-top:14px;padding:14px;border:1px solid rgba(168,85,247,.35);border-radius:12px;background:rgba(124,58,237,.08);">
+              <div style="font-weight:800;margin-bottom:6px;">TEST ACCOUNT TOOLS</div>
+              <p class="muted tiny" style="margin:0 0 10px;">GRIND_TEST only · Adds $9,999,999,999,999 each press.</p>
+              <button type="button" id="infCashBtn" class="primary-btn">＋ Inf Cash</button>
+            </div>
+            <p id="accountMessage" class="form-message"></p>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div class="account-intro-setting">
+              <div>
+                <strong>Dompic Entertainment Intro</strong>
+                <p class="muted tiny" style="margin:4px 0 0;">Preview the cinematic studio intro planned for the GRIND launch.</p>
+              </div>
+              <button type="button" class="primary-btn" id="playIntroBtn">▶ Play Intro</button>
+            </div>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div id="themeSettingsSection">
+              <div class="theme-settings-head">
+                <div>
+                  <h4>Theme settings</h4>
+                  <p class="muted tiny" id="themeSettingsSub">Pick a visual theme unlocked by your account tier.</p>
+                </div>
+              </div>
+              <div id="themeStripsList" class="theme-strips-list"></div>
+            </div>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div id="musicSettingsSection">
+              <div class="music-settings-head">
+                <div>
+                  <h4>Music Settings</h4>
+                  <p class="muted tiny" id="musicSettingsSub">Soothing ambient lounge music plays automatically when using a PREMIUM theme.</p>
+                </div>
+                <button type="button" id="ambientMusicToggleBtn" class="music-toggle-btn active" aria-pressed="true">
+                  <span class="music-toggle-dot" aria-hidden="true"></span>
+                  <span id="ambientMusicToggleLabel">Music: On</span>
+                </button>
+              </div>
+              <div class="music-settings-card" id="musicSettingsCard">
+                <div class="music-settings-info">
+                  <div class="music-eq-bars" id="musicEqBars" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <div>
+                    <strong id="musicTrackTitle">Obsidian Lounge — Soothing Ambient</strong>
+                    <p class="muted tiny" id="musicStatusDesc" style="margin:2px 0 0;">Plays automatically whenever Sapphire &amp; Obsidian or Gold &amp; Platinum is active.</p>
+                  </div>
+                </div>
+                <span class="music-state-pill" id="musicStatePill">Off</span>
+              </div>
+            </div>
+            <hr style="border-color:#3a2e4a;margin:20px 0">
+            <div id="premiumSection">
+              <h4>Account Tier &amp; Perks</h4>
+              <p class="muted tiny" id="premiumStatus">Loading...</p>
+              <div class="tier-list muted tiny">
+                <div><strong>Member:</strong> Max 1 coin</div>
+                <div><strong>PRO:</strong> Max 2 coins, Gold Crown icon, 2X daily rewards</div>
+                <div><strong>Premium:</strong> Max 3 coins, Blue Star icon, all PRO perks</div>
+              </div>
+              <button class="zoom-btn" id="openDailyBtn" type="button" style="margin:10px 0 14px;">View Daily Login</button>
+              <div id="requestForm" class="hidden">
+                <label>Why do you want Premium?<textarea id="premiumReason" rows="2" maxlength="300" placeholder="Write a short reason..."></textarea></label>
+                <button class="primary-btn" id="sendRequestBtn" type="button">Send request</button>
+              </div>
+            </div>
+            <div id="deleteOwnAccountSection">
+              <hr style="border-color:#3a2e4a;margin:20px 0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div>
+                  <strong style="color:#fca5a5;">Delete account</strong>
+                  <p class="muted tiny" style="margin:2px 0 0;">Permanently delete your account and all your market data.</p>
+                </div>
+                <button type="button" class="zoom-btn" id="resetOwnProgressBtn">Reset progress</button>
+                <button type="button" class="ban-btn" id="deleteOwnAccountBtn">Delete account</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- REPORT -->
+        <section id="page-report" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">SAFETY &amp; SUPPORT</div>
+              <h3>Report Player or Bug</h3>
+              <p class="muted">Select whether you want to report a player or a bug/exploit. Reports go directly to Dompinator notifications.</p>
+            </div>
+          </div>
+          <div class="form-card">
+            <div class="feed-tabs report-type-tabs" id="reportTypeTabs">
+              <button type="button" class="feed-tab active" data-report-type="player">Report Player</button>
+              <button type="button" class="feed-tab" data-report-type="bug">Report Bug / Exploit</button>
+            </div>
+            <div id="reportPlayerWrap">
+              <label>Player to report
+                <select id="reportPlayerSelect">
+                  <option value="">Select a player...</option>
+                </select>
+              </label>
+              <label>Or type username manually (optional)
+                <input id="reportPlayerManual" maxlength="20" placeholder="Exact username if not in list">
+              </label>
+            </div>
+            <div id="reportBugWrap" class="hidden">
+              <label>Bug / Exploit title
+                <input id="reportBugTitle" maxlength="80" placeholder="e.g. Issue when selling or chart glitch">
+              </label>
+            </div>
+            <label>Details
+              <textarea id="reportDetails" rows="4" maxlength="600" placeholder="Explain what happened, steps to reproduce, or rule violation details..."></textarea>
+            </label>
+            <button class="primary-btn full" id="submitReportBtn" type="button">Send report to Dompinator</button>
+            <p id="reportMessage" class="form-message"></p>
+          </div>
+        </section>
+
+        <!-- NOTIFICATIONS (All users: updates/warnings/coin comments/replies; Dompinator also sees reports & requests) -->
+        <section id="page-notifications" class="page hidden">
+          <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div class="eyebrow purple-text" id="notificationsEyebrow">INBOX</div>
+              <h3>Notifications</h3>
+              <p class="muted" id="notificationsSubtitle">Updates, warnings, coin &amp; video likes, comments, replies, and donations.</p>
+            </div>
+            <button type="button" class="zoom-btn" id="markNotifsReadBtn" style="padding:8px 14px;">Mark all read</button>
+          </div>
+
+          <div id="userNotifsBlock">
+            <div class="feed-tabs" id="userNotifsFilterTabs" style="margin:6px 0 16px;">
+              <button type="button" class="feed-tab active" data-unotif="all">All</button>
+              <button type="button" class="feed-tab" data-unotif="update">Updates</button>
+              <button type="button" class="feed-tab" data-unotif="warning">Warnings</button>
+              <button type="button" class="feed-tab" data-unotif="social">Followers, Likes &amp; Comments</button>
+              <button type="button" class="feed-tab" data-unotif="donate">Donations</button>
+              <button type="button" class="feed-tab" data-unotif="battle">⚔️ Battles</button>
+            </div>
+            <div id="userNotifsList" class="requests-list" style="margin-bottom:28px;"></div>
+            <div id="emptyUserNotifs" class="empty-state hidden" style="padding:28px 20px;">
+              <div class="empty-icon">✦</div>
+              <p>No notifications yet.</p>
+            </div>
+          </div>
+
+          <div id="dompinatorNotifsSection" class="hidden">
+            <hr style="border-color:#3a2e4a;margin:24px 0">
+            <div class="notif-block-head">
+              <div class="eyebrow purple-text">ADMIN · PLAYER &amp; BUG REPORTS</div>
+              <div class="feed-tabs" id="reportsFilterTabs" style="margin:10px 0 14px;">
+                <button type="button" class="feed-tab active" data-repfilter="all">All</button>
+                <button type="button" class="feed-tab" data-repfilter="player">Players</button>
+                <button type="button" class="feed-tab" data-repfilter="bug">Bugs</button>
+              </div>
+            </div>
+            <div id="reportsList" class="requests-list" style="margin-bottom:28px;"></div>
+            <div id="emptyReports" class="empty-state hidden" style="padding:28px 20px;">
+              <p>No open reports.</p>
+            </div>
+
+            <hr style="border-color:#3a2e4a;margin:24px 0">
+            <div class="section-head" style="margin-bottom:14px;">
+              <div>
+                <div class="eyebrow purple-text">ADMIN · TIERS</div>
+                <h3 style="margin:4px 0 0;">Premium requests</h3>
+              </div>
+            </div>
+            <div id="requestsList" class="requests-list"></div>
+            <div id="emptyRequests" class="empty-state">
+              <p>No pending requests.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- GRINDWORLD NETWORK -->
+        <section id="page-grindworld" class="page hidden">
+          <div class="grindworld-heading">
+            <div>
+              <div class="eyebrow purple-text">THE GRIND NETWORK</div>
+              <h3>GrindWorld</h3>
+              <p class="muted">A live map of the people, companies, products and coins connected through the market.</p>
+            </div>
+            <div class="grindworld-toolbar">
+              <button type="button" class="zoom-btn" id="grindWorldRefresh">↻ Refresh</button>
+              <button type="button" class="zoom-btn" id="grindWorldZoomOut" aria-label="Zoom out">−</button>
+              <button type="button" class="zoom-btn" id="grindWorldZoomIn" aria-label="Zoom in">＋</button>
+              <button type="button" class="zoom-btn" id="grindWorldFit">Fit network</button>
+            </div>
+          </div>
+          <div class="grindworld-meta">
+            <span id="grindWorldStats">Loading network…</span>
+            <span class="grindworld-legend">
+              <span><i class="gw-legend-user"></i> Users</span>
+              <span><i class="gw-legend-company"></i> Companies</span>
+              <span><i class="gw-legend-product"></i> Products</span>
+              <span><i class="gw-legend-coin"></i> Coins</span>
+              <span><i class="gw-legend-pulse"></i> Recent activity</span>
+            </span>
+          </div>
+          <div class="grindworld-stage">
+            <canvas id="grindWorldCanvas" aria-label="Interactive GrindWorld network visualization"></canvas>
+            <div class="grindworld-loading" id="grindWorldLoading">Building the network…</div>
+            <div class="grindworld-selection hidden" id="grindWorldSelection">
+              <button type="button" id="grindWorldSelectionClose" aria-label="Close details">×</button>
+              <small id="grindWorldSelectionType">NETWORK NODE</small>
+              <strong id="grindWorldSelectionName">Selected node</strong>
+              <span id="grindWorldSelectionMeta"></span>
+            </div>
+            <div class="grindworld-hint">Drag to move · Scroll to zoom · Select a circle for details</div>
+          </div>
+          <p class="grindworld-footnote">Colored regions represent each user’s share of GRIND market activity. Connections between users, companies, products and coins are based on saved platform data. Inactive purchase connections expire after 48 hours.</p>
+        </section>
+
+        <!-- ADMIN (only Dompinator) -->
+        <section id="page-admin" class="page hidden">
+          <div class="danger-zone-card">
+            <div>
+              <div class="eyebrow" style="color:#fca5a5;">BETA SERVER CONTROLS</div>
+              <h3 style="margin:4px 0;">Reset Servers</h3>
+              <p class="muted tiny" style="margin:0;">Clear all coins/currencies, trades, and holdings, and reset every account back to $15.00 cash, $15.00 net worth, and 0m playtime.</p>
+            </div>
+            <button type="button" class="danger-reset-btn" id="openServerResetBtn">Reset Servers</button>
+          </div>
+
+          <div class="pass-season-admin-card">
+            <div>
+              <div class="eyebrow purple-text">PASS SEASON CONTROL</div>
+              <h3 style="margin:4px 0;">Season <span id="adminCurrentSeasonNum">1</span> · Pass Play Time</h3>
+              <p class="muted tiny" style="margin:0;">Start the next season to reset everyone's Pass Play Time to 0m. Does NOT reset the Global Leaderboard!</p>
+            </div>
+            <button type="button" class="primary-btn" id="adminNextSeasonBtn">Start Next Season</button>
+          </div>
+
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">ADMIN</div>
+              <h3>Post Update Notification</h3>
+              <p class="muted">Broadcast an update popup with optional or required checkboxes to all players.</p>
+            </div>
+          </div>
+          <div class="admin-update-grid">
+            <div class="form-card">
+              <label>Title<input id="updateTitleInput" maxlength="80" placeholder="e.g. GRIND v0.7.1 Update"></label>
+              <label>Message<textarea id="updateBodyInput" rows="3" maxlength="800" placeholder="Describe what changed or important info..."></textarea></label>
+              <div style="margin:14px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+                  <strong style="font-size:13px;">Checkboxes</strong>
+                  <button type="button" class="zoom-btn" id="addUpdateCheckboxBtn">+ Add checkbox</button>
+                </div>
+                <div id="updateCheckboxesBuilder" class="update-builder-list"></div>
+              </div>
+              <div class="admin-update-submit-row">
+                <button type="button" class="primary-btn" style="flex:1;" id="publishUpdateBtn">Publish update notification</button>
+                <button type="button" class="zoom-btn" id="testUpdatePopupBtn">Preview popup</button>
+              </div>
+              <p id="updatePostMessage" class="form-message"></p>
+            </div>
+
+            <div class="modal-card profile-modal-card update-modal-card update-preview-card">
+              <div class="modal-head">
+                <div>
+                  <div class="eyebrow" style="color:#fbbf24;">LIVE PREVIEW · UPDATE NOTIFICATION</div>
+                  <h3 id="updatePreviewTitle">Update Notification</h3>
+                </div>
+              </div>
+              <div id="updatePreviewBody" class="warn-message-box"></div>
+              <div id="updatePreviewBoxes" class="update-check-list"></div>
+              <p id="updatePreviewHint" class="muted tiny" style="margin:10px 0 0;"></p>
+              <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                <button class="primary-btn" id="updatePreviewContinueBtn" type="button">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">POSTED UPDATES</div>
+              <h3>Active update notifications</h3>
+            </div>
+          </div>
+          <div id="adminUpdatesList" class="requests-list" style="margin-bottom:28px;"></div>
+
+          <hr style="border-color:#3a2e4a;margin:28px 0">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">ACCOUNT MODERATION</div>
+              <h3>Manage accounts</h3>
+              <p class="muted">Warn, reset, or ban player accounts (Dompinator only).</p>
+            </div>
+          </div>
+          <div class="admin-search-bar">
+            <input id="adminAccountSearch" class="feed-search" type="search" placeholder="Search username...">
+          </div>
+          <div id="adminAccountsList" class="leaderboard-list"></div>
+        </section>
+
+        <!-- PASS (Battle Pass: Top Free Track + Bottom PRO 2X Track) -->
+        <section id="page-pass" class="page hidden">
+          <div class="pass-hero-card">
+            <div class="pass-hero-top">
+              <div>
+                <div class="eyebrow purple-text" id="passSeasonEyebrow">SEASON 1 BATTLE PASS</div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0;">
+                  <h3 style="margin:0;">Season <span id="passSeasonTitleNum">1</span> Pass</h3>
+                  <span id="passProTrackStatus" class="pass-track-pill locked">FREE TRACK ONLY</span>
+                </div>
+                <p class="muted tiny" style="margin:0;">Unlock 20 levels every 5 minutes of Play Time. Top track is Free; bottom PRO track gives 2X every reward! Pass Play Time resets each new season (Leaderboard untouched).</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <button type="button" class="primary-btn hidden" id="passClaimAllBtn">Claim All Ready</button>
+                <div class="pass-time-pill">
+                  <span class="muted tiny">PASS PLAY TIME</span>
+                  <strong id="passPlayTimeValue">0m 00s</strong>
+                </div>
+              </div>
+            </div>
+            <div class="pass-progress-meta">
+              <span id="passNextLevelText" class="tiny muted">Next reward at 5m</span>
+              <span id="passLevelText" class="tiny">Level 0 / 20</span>
+            </div>
+            <div class="pass-progress-track">
+              <div id="passProgressFill" class="pass-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div id="passLivePostCard" class="form-card pass-livepost-card hidden">
+            <div class="eyebrow purple-text">TIER 10 REWARD · COIN LIVE POST</div>
+            <h4 style="margin:6px 0 4px;">Broadcast a Coin to Everyone in LIVE</h4>
+            <p class="muted tiny" id="passLivePostSubtitle" style="margin:0 0 14px;">Pick a coin and write a message for everyone in the Live Activity feed.</p>
+            <div class="form-grid">
+              <label>Choose Coin
+                <select id="passLivePostCoin">
+                  <option value="">Select a coin...</option>
+                </select>
+              </label>
+              <label>Message in LIVE
+                <input id="passLivePostMsg" maxlength="160" placeholder="e.g. Check out this coin right now!">
+              </label>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+              <span id="passLivePostStatus" class="tiny muted"></span>
+              <button type="button" class="primary-btn" id="sendPassLivePostBtn">Post Coin to LIVE</button>
+            </div>
+          </div>
+
+          <div class="pass-board-controls">
+            <span class="muted tiny">Top Track: <strong>Free</strong> · Bottom Track: <strong style="color:#fbbf24;">PRO (2X)</strong></span>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="zoom-btn" id="passScrollLeftBtn" title="Scroll left">◀ Prev</button>
+              <button type="button" class="zoom-btn" id="passScrollRightBtn" title="Scroll right">Next ▶</button>
+            </div>
+          </div>
+
+          <div class="pass-board-shell">
+            <div class="pass-track-labels">
+              <div class="pass-track-label free">
+                <span class="pass-track-tag free">FREE</span>
+                <small class="muted tiny">All Players</small>
+              </div>
+              <div class="pass-track-label spine">
+                <span class="tiny muted">LEVEL</span>
+              </div>
+              <div class="pass-track-label pro">
+                <span class="pass-track-tag pro">PRO · 2X</span>
+                <small class="tiny" style="color:#fcd34d;">PRO / Premium</small>
+              </div>
+            </div>
+            <div id="passColumnsScroll" class="pass-columns-scroll">
+              <div id="passTiersTrack" class="pass-columns-track"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GRIND-BOT (PRO+ AI Stock Tactics Chatbot) -->
+        <section id="page-grindbot" class="page hidden">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow purple-text">⌘ AI TACTICAL ADVISOR</div>
+              <h3>GRIND-BOT</h3>
+              <p class="muted">All GRIND game help, net worth growth &amp; stock tactics. Requires PRO or Premium tier.</p>
+            </div>
+          </div>
+
+          <div id="grindBotLocked" class="form-card grindbot-locked hidden">
+            <div class="empty-icon">⌘</div>
+            <h3>PRO or Premium Required</h3>
+            <p class="muted" style="max-width:460px;margin:8px auto 18px;">GRIND-BOT analyzes live GRIND bonding-curve tactics, net worth growth, and portfolio moves exclusively for PRO and Premium traders.</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+              <button type="button" class="primary-btn" data-goto="pass">Earn Free PRO in Pass (Lv 20)</button>
+              <button type="button" class="zoom-btn" id="grindBotOpenDailyBtn" style="padding:12px 18px;">Daily Login (Day 7 PRO)</button>
+              <button type="button" class="zoom-btn" data-goto="account" style="padding:12px 18px;">Request Premium</button>
+            </div>
+          </div>
+
+          <div id="grindBotApp" class="grindbot-shell hidden">
+            <div class="grindbot-topbar">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="grindbot-avatar">⌘</div>
+                <div>
+                  <strong>GRIND-BOT</strong>
+                  <div class="muted tiny" id="grindBotSubtitle">All GRIND Questions &amp; Tactics · Live Market Aware</div>
+                </div>
+              </div>
+              <button type="button" class="zoom-btn" id="grindBotClearBtn">New Chat</button>
+            </div>
+
+            <div class="grindbot-prompts" id="grindBotQuickPrompts">
+              <button type="button" class="feed-tab grindbot-chip" data-gb-prompt="How do I raise my net-worth faster in GRIND?">Raise my net worth</button>
+              <button type="button" class="feed-tab grindbot-chip" data-gb-prompt="Analyze the current GRIND market and suggest my best tactical move right now.">Analyze current market</button>
+              <button type="button" class="feed-tab grindbot-chip" data-gb-prompt="When is the best time to sell 1/4, 1/2, or All of a rising coin?">When to scale out &amp; sell</button>
+              <button type="button" class="feed-tab grindbot-chip" data-gb-prompt="How do the Season Battle Pass, PRO 2X track, and Daily Login work?">How Pass &amp; Daily work</button>
+            </div>
+
+            <div id="grindBotMessages" class="grindbot-messages"></div>
+
+            <form id="grindBotForm" class="grindbot-composer">
+              <input id="grindBotInput" maxlength="1500" autocomplete="off" placeholder="Ask GRIND-BOT about net worth, coins, Battle Pass, or tactics...">
+              <button type="submit" class="primary-btn" id="grindBotSendBtn">Send</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- MARKETPLACE (STORE · CSGO-STYLE CRATES) -->
+        <section id="page-marketplace" class="page hidden">
+          <div class="section-head marketplace-head">
+            <div>
+              <div class="eyebrow purple-text">STORE · SEASON 1 CRATES</div>
+              <h3>Marketplace</h3>
+              <p class="muted">Unbox Season 1 Title Crates. Duplicate titles give 50% of the crate cost back!</p>
+            </div>
+            <div class="marketplace-summary-pills">
+              <div class="mkt-pill"><span>CASH</span><strong id="mktCashPill">$15.00</strong></div>
+              <div class="mkt-pill"><span>TITLES</span><strong id="mktUnlockedPill">0 / 12</strong></div>
+              <div class="mkt-pill"><span>EQUIPPED</span><strong id="mktEquippedPill">None</strong></div>
+            </div>
+          </div>
+
+          <div id="marketplaceCratesGrid" class="mkt-crates-grid"></div>
+
+          <div id="marketplaceContentsCard" class="form-card mkt-contents-card">
+            <div class="mkt-contents-head">
+              <div>
+                <div class="eyebrow purple-text" id="mktContentsEyebrow">CRATE CONTENTS</div>
+                <h4 id="mktContentsTitle" style="margin:3px 0 0;">Default Crate 1 Drops</h4>
+                <p class="muted tiny" id="mktContentsSub" style="margin:3px 0 0;">Drop rates for each Season 1 Title inside this crate.</p>
+              </div>
+              <button type="button" class="primary-btn" id="mktOpenSelectedBtn">Open Crate · $100.00</button>
+            </div>
+            <div id="mktOddsBar" class="mkt-odds-bar"></div>
+            <div id="mktContentsGrid" class="mkt-items-grid"></div>
+          </div>
+
+          <div class="form-card mkt-locker-card">
+            <div class="mkt-contents-head">
+              <div>
+                <div class="eyebrow purple-text">YOUR COLLECTION</div>
+                <h4 style="margin:3px 0 0;">Season 1 Title Locker</h4>
+                <p class="muted tiny" style="margin:3px 0 0;">Equip any unlocked title to display it on the Leaderboard and your Account view.</p>
+              </div>
+              <button type="button" class="zoom-btn hidden" id="mktUnequipTitleBtn">Unequip Title</button>
+            </div>
+            <div id="mktLockerGrid" class="mkt-items-grid"></div>
+          </div>
+        </section>
+
+        <!-- COIN DETAIL -->
+        <section id="page-coin" class="page hidden">
+          <button class="back-link" id="backToFeed">← Back to feed</button>
+          <div id="coinDetail"></div>
+        </section>
+
+        <!-- COMPANY STOCK DETAIL -->
+        <section id="page-company-stock" class="page hidden">
+          <button type="button" class="back-link" id="backToCompaniesFeed">← Back to companies</button>
+          <div id="companyStockDetail"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <!-- DAILY LOGIN MODAL -->
+  <div id="dailyModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card daily-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">DAILY LOGIN</div>
+          <h3>Daily Rewards</h3>
+          <p class="muted tiny" id="dailySubtitle">Come back every day for bigger rewards and a free PRO upgrade on Day 7!</p>
+        </div>
+        <button class="zoom-btn" id="closeDailyBtn" type="button">✕</button>
+      </div>
+      <div id="dailyGrid" class="daily-grid"></div>
+      <div class="daily-footer">
+        <span id="dailyStatusText" class="muted tiny"></span>
+        <button class="primary-btn" id="claimDailyBtn" type="button">Claim reward</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE PREVIEW MODAL -->
+  <div id="profileModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card">
+      <div class="modal-head">
+        <div class="eyebrow purple-text">TRADER PROFILE</div>
+        <div class="profile-head-right-actions">
+          <button type="button" id="profileChallengeBtn" class="tb-challenge-btn hidden">⚔️ Challenge</button>
+          <button class="zoom-btn" id="closeProfileBtn" type="button">✕</button>
+        </div>
+      </div>
+      <div id="profileModalBody"></div>
+    </div>
+  </div>
+
+  <!-- WARNING MODAL -->
+  <div id="warnModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#fbbf24;">ACCOUNT WARNING</div>
+          <h3>Warning from Admin</h3>
+        </div>
+      </div>
+      <div id="warnModalBody" class="warn-message-box"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="primary-btn" id="ackWarnBtn" type="button">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNED ACCOUNT SCREEN -->
+  <main id="bannedView" class="auth-shell hidden">
+    <section class="auth-card">
+      <div class="brand-mark" style="background:linear-gradient(135deg,#ef4444,#991b1b);">!</div>
+      <div class="eyebrow" style="color:#fca5a5;">ACCOUNT SUSPENDED</div>
+      <h1>Banned<span>.</span></h1>
+      <p id="bannedReasonText" class="muted">Your account has been banned by an administrator.</p>
+      <button class="primary-btn full" id="bannedLogoutBtn" type="button" style="margin-top:14px;">Log out</button>
+    </section>
+  </main>
+
+  <!-- UPDATE NOTIFICATION MODAL -->
+  <div id="updateModal" class="modal-backdrop hidden" style="z-index:95;" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card update-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#fbbf24;" id="updateModalEyebrow">UPDATE NOTIFICATION</div>
+          <h3 id="updateModalTitle">Update</h3>
+        </div>
+        <button class="zoom-btn hidden" id="closeUpdatePreviewBtn" type="button">✕</button>
+      </div>
+      <div id="updateModalBody" class="warn-message-box"></div>
+      <div id="updateModalBoxes" class="update-check-list"></div>
+      <p id="updateModalHint" class="muted tiny" style="margin:10px 0 0;"></p>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="primary-btn" id="updateContinueBtn" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMS OF SERVICE MODAL -->
+  <div id="tosModal" class="modal-backdrop hidden" style="z-index:105;" role="dialog" aria-modal="true">
+    <div class="modal-card tos-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#38bdf8;">LEGAL &amp; RULES</div>
+          <h3>Terms of Service</h3>
+        </div>
+        <button class="zoom-btn" id="closeTosBtn" type="button" aria-label="Close Terms of Service">✕</button>
+      </div>
+      <div id="tosModalBody" class="tos-content-box">Loading Terms of Service...</div>
+    </div>
+  </div>
+
+  <!-- SERVER RESET CONFIRMATION MODAL -->
+  <div id="serverResetModal" class="modal-backdrop hidden" style="z-index:106;" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card danger-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#f87171;">BETA SERVER RESET</div>
+          <h3>Reset All Servers?</h3>
+        </div>
+        <button class="zoom-btn" id="closeServerResetBtn" type="button">✕</button>
+      </div>
+      <div class="danger-message-box">
+        This will permanently clear <strong>all coins/currencies, trades, and holdings</strong> and reset <strong>every account</strong> back to $15.00 cash, $15.00 net worth, 0m playtime, and starter tier status. Active bans and warnings stay intact.
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button class="zoom-btn" id="cancelServerResetBtn" type="button" style="padding:10px 16px;">Cancel</button>
+        <button class="danger-reset-btn" id="confirmServerResetBtn" type="button">Yes, Reset Servers</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+  <div id="deleteAccountModal" class="modal-backdrop hidden" style="z-index:107;" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card danger-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#f87171;">PERMANENT ACTION</div>
+          <h3>Delete Account?</h3>
+        </div>
+        <button class="zoom-btn" id="closeDeleteAccountBtn" type="button">✕</button>
+      </div>
+      <div id="deleteAccountMessage" class="danger-message-box"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button class="zoom-btn" id="cancelDeleteAccountBtn" type="button" style="padding:10px 16px;">Cancel</button>
+        <button class="danger-reset-btn" id="confirmDeleteAccountBtn" type="button">Yes, Permanently Delete</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- RESET OWN PROGRESS CONFIRMATION MODAL -->
+  <div id="resetOwnProgressModal" class="modal-backdrop hidden" style="z-index:108;" role="dialog" aria-modal="true" aria-labelledby="resetOwnProgressTitle">
+    <div class="modal-card profile-modal-card danger-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#fbbf24;">RESET GAME PROGRESS</div>
+          <h3 id="resetOwnProgressTitle">Reset your progress?</h3>
+        </div>
+        <button class="zoom-btn" id="closeResetOwnProgressBtn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="danger-message-box">This permanently resets your Grind gameplay progress. Your account, login, username and avatar stay, but your cash and net worth return to <strong>$15</strong>. Your coins, holdings, trades, company, products, research, purchases, premium status and playtime will be cleared. This cannot be undone.</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button class="zoom-btn" id="cancelResetOwnProgressBtn" type="button" style="padding:10px 16px;">Cancel</button>
+        <button class="danger-reset-btn" id="confirmResetOwnProgressBtn" type="button">Yes, Reset My Progress</button>
+      </div>
+      <p id="resetOwnProgressMessage" class="form-message" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <!-- EDIT COIN MODAL (Description & Logo only) -->
+  <div id="editCoinModal" class="modal-backdrop hidden" style="z-index:104;" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text" id="editCoinEyebrow">EDIT CURRENCY</div>
+          <h3 id="editCoinTitle">Edit Currency</h3>
+          <p class="muted tiny" style="margin:2px 0 0;">Only description and logo can be edited.</p>
+        </div>
+        <button class="zoom-btn" id="closeEditCoinBtn" type="button">✕</button>
+      </div>
+      <div class="image-upload" style="margin-top:4px;">
+        <div class="coin-logo big" id="editCoinPreview" title="Click to upload logo">＋</div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+          <label class="upload-link" for="editCoinImage" style="margin:0;">Upload new logo</label>
+          <button type="button" class="zoom-btn" id="removeEditCoinLogoBtn">Remove logo</button>
+        </div>
+        <input id="editCoinImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      </div>
+      <label style="margin-top:8px;">Description
+        <textarea id="editCoinDescription" rows="3" maxlength="200" placeholder="Describe your currency..."></textarea>
+      </label>
+      <p id="editCoinMessage" class="form-message"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+        <button class="zoom-btn" id="cancelEditCoinBtn" type="button" style="padding:10px 16px;">Cancel</button>
+        <button class="primary-btn" id="saveEditCoinBtn" type="button">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURED COINS MODAL (Dompinator only: 3 selectable boxes) -->
+  <div id="featuredEditModal" class="modal-backdrop hidden" style="z-index:104;" role="dialog" aria-modal="true">
+    <div class="modal-card profile-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">ADMIN · FEATURED</div>
+          <h3>Choose 3 Featured Coins</h3>
+          <p class="muted tiny" style="margin:2px 0 0;">Pick up to 3 coins to feature above the market feed for all players.</p>
+        </div>
+        <button class="zoom-btn" id="closeFeaturedEditBtn" type="button">✕</button>
+      </div>
+      <div class="featured-slot-boxes">
+        <div class="featured-slot-box">
+          <label>Featured Coin 1
+            <select id="featuredSlot1"></select>
+          </label>
+        </div>
+        <div class="featured-slot-box">
+          <label>Featured Coin 2
+            <select id="featuredSlot2"></select>
+          </label>
+        </div>
+        <div class="featured-slot-box">
+          <label>Featured Coin 3
+            <select id="featuredSlot3"></select>
+          </label>
+        </div>
+      </div>
+      <p id="featuredEditMessage" class="form-message"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+        <button class="zoom-btn" id="cancelFeaturedEditBtn" type="button" style="padding:10px 16px;">Cancel</button>
+        <button class="primary-btn" id="saveFeaturedBtn" type="button">Save Featured</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRO TIER PAID UPGRADE MODAL (shown for Member accounts clicking GRIND-BOT) -->
+  <div id="proUpgradeModal" class="modal-backdrop pro-upgrade-backdrop hidden" style="z-index:108;" role="dialog" aria-modal="true" aria-labelledby="proUpgradeTitle">
+    <div class="modal-card pro-upgrade-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#fbbf24;">★ PRO TIER UPGRADE</div>
+          <h3 id="proUpgradeTitle">Unlock GRIND-BOT &amp; PRO</h3>
+          <p class="muted tiny" style="margin:2px 0 0;">Upgrade your Member account to PRO for live tactical AI and 2X rewards.</p>
+        </div>
+        <button class="zoom-btn" id="closeProUpgradeBtn" type="button">✕</button>
+      </div>
+
+      <div class="pro-perks-grid">
+        <div class="pro-perk-item"><span>⌘</span><span>GRIND-BOT Live AI Advisor</span></div>
+        <div class="pro-perk-item"><span>★</span><span>2X Battle Pass Bottom Track</span></div>
+        <div class="pro-perk-item"><span>✦</span><span>2X Daily Login Cash</span></div>
+        <div class="pro-perk-item"><span>◈</span><span>Up to 2 Coins + Gold Crown</span></div>
+      </div>
+
+      <div class="pro-plan-grid" id="proPlanGrid">
+        <button type="button" class="pro-plan-card selected" data-pro-plan="monthly">
+          <div class="pro-plan-top">
+            <span class="pro-plan-name">Monthly Plan</span>
+            <span class="pro-plan-badge">Flexible</span>
+          </div>
+          <div class="pro-plan-price">39.99 kr<span> / mo</span></div>
+          <div class="pro-plan-sub">Billed monthly · Cancel anytime</div>
+        </button>
+
+        <button type="button" class="pro-plan-card" data-pro-plan="yearly">
+          <div class="pro-plan-top">
+            <span class="pro-plan-name">Yearly Plan</span>
+            <span class="pro-plan-badge yearly">Annual</span>
+          </div>
+          <div class="pro-plan-price">499 kr<span> / yr</span></div>
+          <div class="pro-plan-sub">Billed once per year</div>
+        </button>
+      </div>
+
+      <div class="pro-upgrade-actions">
+        <button type="button" class="pro-upgrade-cta" id="proUpgradePayBtn">Upgrade to PRO · 39.99 kr / mo</button>
+        <button type="button" class="zoom-btn" id="proUpgradeLaterBtn">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER PROMOTION CROWN OVERLAY (PRO & PREMIUM) -->
+  <div id="tierPromoOverlay" class="tier-promo-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tierPromoTitle">
+    <canvas id="tierPromoCanvas" class="tier-promo-canvas" aria-hidden="true"></canvas>
+    <div class="tier-promo-stage" id="tierPromoStage">
+      <div class="tier-promo-aurora" aria-hidden="true"></div>
+      <div class="tier-promo-ring ring-outer" aria-hidden="true"></div>
+      <div class="tier-promo-ring ring-inner" aria-hidden="true"></div>
+      <div class="tier-promo-crown-wrap">
+        <div class="tier-promo-crown-glow" aria-hidden="true"></div>
+        <div class="tier-promo-crown-svg" id="tierPromoCrownSvg"></div>
+        <div class="tier-promo-sheen" aria-hidden="true"></div>
+      </div>
+      <div class="tier-promo-copy">
+        <div class="tier-promo-kicker" id="tierPromoKicker">TIER PROMOTION</div>
+        <h2 class="tier-promo-title" id="tierPromoTitle">PROMOTED TO PRO</h2>
+        <p class="tier-promo-sub" id="tierPromoSub"></p>
+        <div class="tier-promo-perks" id="tierPromoPerks"></div>
+        <button type="button" class="tier-promo-btn" id="tierPromoCloseBtn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- >$200 COIN BUY SMOOTH ANIMATION LAYER -->
+  <div id="coinBoostFxLayer" class="coin-boost-fx-layer" aria-hidden="true"></div>
+
+  <!-- $1000+ HUGE COIN INJECTION CELEBRATION OVERLAY -->
+  <div id="whaleBuyOverlay" class="whale-buy-overlay hidden" aria-hidden="true">
+    <div class="whale-ambient-wash"></div>
+    <canvas id="whaleBuyCanvas" class="whale-buy-canvas"></canvas>
+    <div class="whale-shockwave wave-1"></div>
+    <div class="whale-shockwave wave-2"></div>
+    <div class="whale-hero" id="whaleBuyBanner">
+      <div class="whale-rays"></div>
+      <div class="whale-emblem-card">
+        <div class="whale-emblem-sheen"></div>
+        <div class="whale-kicker">MEGA INJECTION</div>
+        <div class="whale-amount" id="whaleAmountNum">+$1,000.00</div>
+        <div class="whale-coin-row" id="whaleCoinRow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECT MESSAGES MODAL -->
+  <div id="dmModal" class="modal-backdrop hidden" style="z-index:112;" role="dialog" aria-modal="true" aria-labelledby="dmModalTitle">
+    <div class="modal-card dm-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">PRIVATE CHAT</div>
+          <h3 id="dmModalTitle">Direct Messages</h3>
+        </div>
+        <button class="zoom-btn" id="closeDmModalBtn" type="button" aria-label="Close Direct Messages">✕</button>
+      </div>
+      <div class="dm-layout">
+        <div class="dm-sidebar-col">
+          <div class="dm-search-wrap">
+            <input id="dmUserSearchInput" class="feed-search dm-search-input" type="search" maxlength="40" placeholder="Search accounts to DM...">
+          </div>
+          <div id="dmSidebarList" class="dm-sidebar-list">
+            <p class="muted tiny" style="padding:12px;">Loading conversations...</p>
+          </div>
+        </div>
+        <div class="dm-chat-col">
+          <div id="dmChatHeader" class="dm-chat-header hidden"></div>
+          <div id="dmEmptyState" class="dm-empty-state">
+            <div class="dm-empty-icon">💬</div>
+            <strong>Start a private conversation</strong>
+            <p class="muted tiny">Search any trader on the left to send a direct message.</p>
+          </div>
+          <div id="dmMessagesList" class="dm-messages-list hidden"></div>
+          <div id="dmTypingRow" class="dm-typing-row hidden" aria-live="polite"></div>
+          <div id="dmCoinPicker" class="dm-coin-picker hidden" role="region" aria-label="Attach coin or GIF">
+            <div class="dm-coin-picker-head">
+              <div>
+                <strong id="dmAttachPickerTitle">Share a Coin</strong>
+                <span class="muted tiny" id="dmAttachPickerSubtitle">Pick any currency to send with a Check It card</span>
+              </div>
+              <div class="dm-attach-head-right">
+                <div class="dm-attach-tabs" id="dmAttachTabs" role="tablist" aria-label="Attachment type">
+                  <button type="button" class="dm-attach-tab active" id="dmAttachCoinsTab" data-dm-attach-tab="coins" role="tab" aria-selected="true">Coins</button>
+                  <button type="button" class="dm-attach-tab" id="dmAttachGifsTab" data-dm-attach-tab="gifs" role="tab" aria-selected="false">GIFs</button>
+                </div>
+                <button type="button" id="dmCloseCoinPickerBtn" class="zoom-btn" aria-label="Close picker">✕</button>
+              </div>
+            </div>
+            <div id="dmCoinPane" class="dm-attach-pane">
+              <input id="dmCoinSearchInput" class="feed-search dm-coin-search" type="search" maxlength="40" placeholder="Search coin name or $ticker...">
+              <div id="dmCoinPickerList" class="dm-coin-picker-list"></div>
+            </div>
+            <div id="dmGifPane" class="dm-attach-pane hidden">
+              <input id="dmGifSearchInput" class="feed-search dm-coin-search" type="search" maxlength="120" placeholder="Search GIPHY GIFs or paste a giphy.com link...">
+              <div id="dmGifStatus" class="dm-gif-status hidden"></div>
+              <div id="dmGifGrid" class="dm-gif-grid"></div>
+              <div class="dm-giphy-attr">Powered by GIPHY</div>
+            </div>
+          </div>
+          <form id="dmSendForm" class="dm-composer hidden">
+            <button type="button" id="dmAttachCoinBtn" class="dm-plus-btn" title="Attach GIF or Coin" aria-label="Attach GIF or Coin" aria-expanded="false">＋</button>
+            <input id="dmMessageInput" type="text" maxlength="500" autocomplete="off" placeholder="Write a private message...">
+            <button type="submit" id="dmSendBtn" class="primary-btn">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COIN TIMELINE WATCH CUTSCENE MODAL -->
+  <div id="coinWatchModal" class="modal-backdrop hidden" style="z-index:114;" role="dialog" aria-modal="true" aria-labelledby="watchCoinTitle">
+    <div class="modal-card watch-modal-card">
+      <div class="modal-head watch-modal-head">
+        <div class="watch-coin-identity">
+          <div class="coin-logo" id="watchCoinLogo">C</div>
+          <div>
+            <div class="eyebrow purple-text" id="watchStatusEyebrow">TIMELINE CUTSCENE</div>
+            <h3 id="watchCoinTitle">Coin History</h3>
+          </div>
+        </div>
+        <div class="watch-live-metrics">
+          <div class="watch-price-readout" id="watchPriceReadout">$1.00</div>
+          <div class="watch-pct-readout flat" id="watchPctReadout">+0.00% vs $1.00</div>
+        </div>
+        <button class="zoom-btn" id="closeWatchModalBtn" type="button" aria-label="Close Timeline Watch">✕</button>
+      </div>
+
+      <div class="watch-event-strip">
+        <span class="watch-clock-badge" id="watchTimeBadge">Start · $1.00</span>
+        <span class="watch-event-ticker" id="watchEventTicker">Preparing full trade timeline...</span>
+      </div>
+
+      <div class="watch-stage">
+        <canvas id="watchChartCanvas" class="watch-canvas"></canvas>
+        <div id="watchBubblesLayer" class="watch-bubbles-layer" aria-hidden="true"></div>
+      </div>
+
+      <div class="watch-transport">
+        <button type="button" class="primary-btn watch-play-btn" id="watchPlayPauseBtn">⏸ Pause</button>
+        <button type="button" class="zoom-btn" id="watchReplayBtn" title="Restart cutscene">↺ Replay</button>
+        <div class="watch-scrubber-wrap">
+          <input type="range" id="watchProgressRange" class="watch-progress-range" min="0" max="1000" value="0" aria-label="Timeline playback position">
+        </div>
+        <div class="watch-speed-group" role="group" aria-label="Playback speed">
+          <button type="button" class="zoom-btn" data-watch-speed="0.5">0.5x</button>
+          <button type="button" class="zoom-btn active" data-watch-speed="1">1x</button>
+          <button type="button" class="zoom-btn" data-watch-speed="2">2x</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSGO-STYLE CRATE UNBOXING MODAL -->
+  <div id="crateOpenModal" class="modal-backdrop hidden" style="z-index:118;" role="dialog" aria-modal="true" aria-labelledby="crateOpenTitle">
+    <div class="modal-card crate-open-card" id="crateOpenCard">
+      <div class="modal-head crate-open-head">
+        <div>
+          <div class="eyebrow purple-text" id="crateOpenEyebrow">UNLOCKING CRATE</div>
+          <h3 id="crateOpenTitle">Default Crate 1</h3>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="zoom-btn" id="crateSkipSpinBtn">Skip Spin</button>
+          <button type="button" class="zoom-btn hidden" id="closeCrateModalBtn" aria-label="Close crate opener">✕</button>
+        </div>
+      </div>
+
+      <div class="crate-spinner-stage" id="crateSpinnerStage">
+        <div class="crate-needle-top" aria-hidden="true"></div>
+        <div class="crate-needle-line" aria-hidden="true"></div>
+        <div class="crate-needle-bottom" aria-hidden="true"></div>
+        <div class="crate-spinner-viewport" id="crateSpinnerViewport">
+          <div class="crate-reel" id="crateReel"></div>
+        </div>
+        <div class="crate-spinner-vignette" aria-hidden="true"></div>
+      </div>
+
+      <div id="crateSpinCaption" class="crate-spin-caption">Rolling Season 1 drops...</div>
+
+      <div id="crateRevealPanel" class="crate-reveal-panel hidden">
+        <div class="crate-reveal-glow" id="crateRevealGlow" aria-hidden="true"></div>
+        <div class="crate-reveal-tier" id="crateRevealTier">MYTHIC</div>
+        <div class="crate-reveal-item" id="crateRevealItemName">Protector Of Worlds</div>
+        <div class="crate-reveal-status" id="crateRevealStatus">NEW TITLE UNLOCKED!</div>
+        <div class="crate-reveal-actions">
+          <button type="button" class="primary-btn" id="crateEquipRewardBtn">Equip Title</button>
+          <button type="button" class="zoom-btn" id="crateOpenAgainBtn">Open Another</button>
+          <button type="button" class="zoom-btn" id="crateDoneBtn">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY UPLOAD CHOICE MODAL -->
+  <div id="playUploadChoiceModal" class="modal-backdrop hidden" style="z-index:116;" role="dialog" aria-modal="true" aria-labelledby="playUploadChoiceTitle">
+    <div class="modal-card play-choice-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">PLAY STUDIO</div>
+          <h3 id="playUploadChoiceTitle">Share to Play</h3>
+          <p class="muted tiny" style="margin:2px 0 0;">All created &amp; uploaded shorts appear in Play. Earn $2/like, $0.50/view &amp; $10/follower!</p>
+          <div id="playUploadTierFeeBanner" class="play-tier-fee-banner">Member: $50 · PRO: $10 · Premium: Free</div>
+        </div>
+        <button type="button" class="zoom-btn" id="closePlayChoiceBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="play-choice-grid">
+        <button type="button" class="play-choice-btn" id="playChooseCreateBtn">
+          <span class="play-choice-icon">✦</span>
+          <strong>Create Short</strong>
+          <small class="muted tiny">Pick colors or gradients, drop in Images, GIFs, Text &amp; Stickers, add Music &amp; animate.</small>
+        </button>
+        <button type="button" class="play-choice-btn" id="playChooseUploadBtn">
+          <span class="play-choice-icon">⇪</span>
+          <strong>Upload Video</strong>
+          <small class="muted tiny">Upload a video clip (.mp4, .webm, .mov) with filters, playback speed, Music &amp; coin tag.</small>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY SHORT CREATOR STUDIO MODAL -->
+  <div id="playCreatorModal" class="modal-backdrop hidden" style="z-index:119;" role="dialog" aria-modal="true" aria-labelledby="playCreatorModalHeading">
+    <div class="modal-card play-creator-card">
+      <div class="play-creator-topbar">
+        <button type="button" class="zoom-btn" id="playCreatorCancelBtn">← Back</button>
+        <input id="playCreatorTitle" class="play-creator-title-input" maxlength="60" placeholder="Add a Short title (optional)...">
+        <button type="button" class="zoom-btn" id="playCreatorUndoBtn" title="Undo last action" disabled>↶ Undo</button>
+        <button type="button" class="primary-btn play-finish-btn" id="playCreatorFinishBtn">Finish ✓</button>
+      </div>
+
+      <div class="play-creator-body">
+        <div class="play-editor-stage-col">
+          <div id="playEditorStage" class="play-editor-stage" style="background:#161222;">
+            <div id="playEditorEmptyHint" class="play-editor-empty-hint">Press <strong>＋ Add Element</strong> to drop Images, GIFs, Text, or Stickers — drag to move &amp; resize!</div>
+          </div>
+          <div id="playEditorSelectionBar" class="play-editor-selection-bar hidden">
+            <div class="play-sel-top">
+              <span id="playSelLabel" class="tiny muted">Selected</span>
+              <div class="play-sel-controls">
+                <button type="button" class="zoom-btn" id="playSelScaleDownBtn" title="Smaller">A-</button>
+                <button type="button" class="zoom-btn" id="playSelScaleUpBtn" title="Larger">A+</button>
+                <button type="button" class="zoom-btn" id="playSelRotLeftBtn" title="Rotate left">↺</button>
+                <button type="button" class="zoom-btn" id="playSelRotRightBtn" title="Rotate right">↻</button>
+                <button type="button" class="zoom-btn" id="playSelAnimBtn" title="Animation effect">✨ Still</button>
+                <button type="button" class="zoom-btn" id="playSelOpacityBtn" title="Cycle opacity">100%</button>
+              </div>
+            </div>
+            <div class="play-sel-controls play-sel-bottom">
+              <input type="color" id="playSelTextColorInput" class="play-color-dot-input hidden" value="#ffffff" title="Text color">
+              <button type="button" class="zoom-btn hidden" id="playSelTextStyleBtn">Pill</button>
+              <button type="button" class="zoom-btn hidden" id="playSelTextFontBtn">Sans</button>
+              <button type="button" class="zoom-btn" id="playSelFrontBtn" title="Bring to front">↑ Front</button>
+              <button type="button" class="zoom-btn" id="playSelBackBtn" title="Send to back">↓ Back</button>
+              <button type="button" class="zoom-btn" id="playSelDupBtn" title="Duplicate">❐</button>
+              <button type="button" class="deny-btn" id="playSelDeleteBtn" style="padding:5px 10px;font-size:12px;">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="play-editor-tools-col">
+          <div class="play-tool-block">
+            <div class="eyebrow purple-text" style="margin-bottom:8px;">ASPECT RATIO</div>
+            <div class="play-aspect-group" id="playAspectRatioGroup">
+              <button type="button" class="play-aspect-btn active" data-aspect="9:16">9:16</button>
+              <button type="button" class="play-aspect-btn" data-aspect="4:5">4:5</button>
+              <button type="button" class="play-aspect-btn" data-aspect="1:1">1:1</button>
+              <button type="button" class="play-aspect-btn" data-aspect="4:3">4:3</button>
+              <button type="button" class="play-aspect-btn" data-aspect="16:9">16:9</button>
+            </div>
+          </div>
+
+          <div class="play-tool-block">
+            <div class="eyebrow purple-text" style="margin-bottom:8px;">BACKGROUND COLOR &amp; GRADIENTS</div>
+            <div class="play-bg-swatches" id="playBgSwatches">
+              <button type="button" class="play-bg-swatch active" data-bg="#161222" style="background:#161222" title="Obsidian"></button>
+              <button type="button" class="play-bg-swatch" data-bg="#2e1065" style="background:#2e1065" title="Deep Purple"></button>
+              <button type="button" class="play-bg-swatch" data-bg="#0f172a" style="background:#0f172a" title="Midnight"></button>
+              <button type="button" class="play-bg-swatch" data-bg="#064e3b" style="background:#064e3b" title="Emerald"></button>
+              <button type="button" class="play-bg-swatch" data-bg="#7f1d1d" style="background:#7f1d1d" title="Crimson"></button>
+              <button type="button" class="play-bg-swatch" data-bg="#f8fafc" style="background:#f8fafc" title="Clean White"></button>
+              <button type="button" class="play-bg-swatch play-gradient-swatch" data-bg="linear-gradient(135deg,#3b0764,#1e1b4b,#0f172a)" style="background:linear-gradient(135deg,#3b0764,#1e1b4b,#0f172a)" title="Cyber Neon"></button>
+              <button type="button" class="play-bg-swatch play-gradient-swatch" data-bg="linear-gradient(135deg,#be123c,#ea580c,#fbbf24)" style="background:linear-gradient(135deg,#be123c,#ea580c,#fbbf24)" title="Sunset Fire"></button>
+              <button type="button" class="play-bg-swatch play-gradient-swatch" data-bg="linear-gradient(135deg,#064e3b,#0f766e,#0284c7)" style="background:linear-gradient(135deg,#064e3b,#0f766e,#0284c7)" title="Emerald Ocean"></button>
+              <button type="button" class="play-bg-swatch play-gradient-swatch" data-bg="linear-gradient(135deg,#451a03,#92400e,#eab308)" style="background:linear-gradient(135deg,#451a03,#92400e,#eab308)" title="24K Luxury"></button>
+              <label class="play-custom-color-label" title="Custom color">
+                <span>🎨</span>
+                <input type="color" id="playBgColorInput" value="#161222" hidden>
+              </label>
+            </div>
+          </div>
+
+          <div class="play-tool-block">
+            <div class="play-tool-head-row">
+              <div class="eyebrow purple-text">ADD ELEMENTS</div>
+              <div class="play-plus-menu-wrap">
+                <button type="button" class="primary-btn play-editor-plus-btn" id="playEditorPlusBtn">＋ Add Element</button>
+                <div id="playEditorPlusMenu" class="play-editor-plus-menu hidden">
+                  <button type="button" id="playAddGifModeBtn">🎞 Add GIF (GIPHY)</button>
+                  <button type="button" id="playAddTextModeBtn">𝐓 Add Text</button>
+                  <button type="button" id="playAddStickerModeBtn">😎 Add Sticker / Emoji</button>
+                  <button type="button" id="playAddPhotoModeBtn">🖼 Add Image</button>
+                  <button type="button" id="playAddPollModeBtn">📊 Add Poll (Max 4)</button>
+                </div>
+              </div>
+            </div>
+            <input id="playEditorPhotoInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+            <div id="playEditorTextPanel" class="play-editor-subpanel hidden">
+              <label style="margin-bottom:8px;">Text overlay
+                <input id="playEditorTextInput" maxlength="90" placeholder="Type text to drop onto your video...">
+              </label>
+              <div class="play-text-add-row">
+                <label class="play-inline-color">Color <input type="color" id="playEditorNewTextColor" value="#ffffff"></label>
+                <select id="playEditorNewTextFont" class="play-compact-select" aria-label="Font family">
+                  <option value="sans">Sans</option>
+                  <option value="impact">Impact</option>
+                  <option value="mono">Mono</option>
+                  <option value="serif">Serif</option>
+                </select>
+                <button type="button" class="primary-btn" id="playEditorAddTextConfirmBtn">Place Text</button>
+              </div>
+            </div>
+
+            <div id="playEditorStickerPanel" class="play-editor-subpanel hidden">
+              <div class="play-sticker-grid" id="playEditorStickerGrid"></div>
+              <div class="play-text-add-row" style="margin-top:8px;">
+                <input id="playCustomEmojiInput" maxlength="8" placeholder="Or type any emoji..." style="flex:1;">
+                <button type="button" class="zoom-btn" id="playCustomEmojiAddBtn">Place</button>
+              </div>
+            </div>
+
+            <div id="playEditorGifPanel" class="play-editor-subpanel hidden">
+              <input id="playEditorGifSearchInput" class="feed-search dm-coin-search" type="search" maxlength="120" placeholder="Search GIPHY GIFs or paste URL...">
+              <div id="playEditorGifStatus" class="dm-gif-status hidden"></div>
+              <div id="playEditorGifGrid" class="dm-gif-grid play-editor-gif-grid"></div>
+              <div class="dm-giphy-attr">Powered by GIPHY</div>
+            </div>
+
+            <div id="playEditorPollPanel" class="play-editor-subpanel hidden">
+              <label style="margin-bottom:8px;">Poll question
+                <input id="playEditorPollQuestionInput" maxlength="80" placeholder="Ask viewers a question...">
+              </label>
+              <div class="tiny muted" style="margin-bottom:6px;">Options (2–4 options)</div>
+              <div id="playEditorPollOptionsWrap" class="play-poll-builder-opts"></div>
+              <div class="play-text-add-row" style="margin-top:8px;">
+                <button type="button" class="zoom-btn" id="playEditorPollAddOptBtn">＋ Add Option</button>
+                <button type="button" class="primary-btn" id="playEditorAddPollConfirmBtn">Place Poll</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="play-tool-block">
+            <div class="eyebrow purple-text" style="margin-bottom:8px;">VOICEOVER (MIC)</div>
+            <div class="play-voiceover-box">
+              <div class="play-vo-controls">
+                <button type="button" class="play-vo-rec-btn" id="playCreatorVoRecBtn">🎙 Record Mic</button>
+                <button type="button" class="zoom-btn hidden" id="playCreatorVoPreviewBtn">▶ Test</button>
+                <button type="button" class="deny-btn hidden" id="playCreatorVoClearBtn" style="padding:5px 10px;font-size:12px;">Clear</button>
+              </div>
+              <div class="muted tiny" id="playCreatorVoStatus">Optional — record your mic (replays with Music at the same time!).</div>
+            </div>
+          </div>
+
+          <div class="play-tool-block">
+            <div class="eyebrow purple-text" style="margin-bottom:8px;">MUSIC &amp; COIN PROMO</div>
+            <div class="play-music-picker-row">
+              <select id="playEditorMusicSelect" class="play-music-select">
+                <option value="">Loading Music folder...</option>
+              </select>
+              <button type="button" class="zoom-btn" id="playEditorMusicPreviewBtn">▶ Test</button>
+            </div>
+            <div style="margin-top:10px;">
+              <div class="tiny" style="font-weight:700;margin-bottom:4px;">Or Upload Custom Audio <span class="muted">(added only to this video)</span></div>
+              <div class="play-voiceover-box play-custom-song-box">
+                <div class="play-vo-controls">
+                  <label class="upload-link play-custom-song-btn" for="playEditorCustomAudioInput">♪ Upload Audio</label>
+                  <input id="playEditorCustomAudioInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" hidden>
+                  <button type="button" class="zoom-btn hidden" id="playEditorCustomAudioPreviewBtn">▶ Test</button>
+                  <button type="button" class="deny-btn hidden" id="playEditorCustomAudioClearBtn" style="padding:5px 10px;font-size:12px;">Clear</button>
+                </div>
+                <input id="playEditorCustomAudioNameInput" class="hidden" maxlength="48" placeholder="Sound / song name..." style="margin-top:8px;">
+                <div class="muted tiny" id="playEditorCustomAudioStatus">Optional — attach your own audio file to this video. Viewers can click the song in the corner to download &amp; use it!</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <select id="playEditorCoinSelect" class="play-music-select" style="width:100%;">
+                <option value="">No Linked Coin (optional)</option>
+              </select>
+            </div>
+            <p class="muted tiny" style="margin:6px 0 0;">Music from GitHub <code>Music/</code> or uploaded audio · Plays alongside Voiceover · STRICTLY no copyrighted uploads.</p>
+          </div>
+          <p id="playCreatorMsg" class="form-message" style="margin-top:4px;"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY VIDEO FILE UPLOAD MODAL -->
+  <div id="playVideoFileModal" class="modal-backdrop hidden" style="z-index:119;" role="dialog" aria-modal="true" aria-labelledby="playVideoFileTitleHeading">
+    <div class="modal-card play-upload-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">UPLOAD VIDEO</div>
+          <h3 id="playVideoFileTitleHeading">Post Video to Play</h3>
+          <p class="muted tiny" style="margin:2px 0 0;">Pick a video clip, apply filters or speed, attach Music, or link a coin.</p>
+        </div>
+        <button type="button" class="zoom-btn" id="closePlayVideoFileBtn" aria-label="Close">✕</button>
+      </div>
+      <label>Title / Caption
+        <input id="playUploadTitleInput" maxlength="60" placeholder="Give your video a catchy title...">
+      </label>
+      <div class="play-file-drop">
+        <label class="upload-link play-file-pick-btn" for="playUploadFileInput">Choose Video File (.mp4, .webm, .mov)</label>
+        <input id="playUploadFileInput" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" hidden>
+        <div id="playUploadFileName" class="muted tiny" style="margin-top:6px;">No video selected</div>
+        <video id="playUploadPreviewVideo" class="play-upload-preview hidden" controls playsinline muted></video>
+      </div>
+      <div class="play-upload-opts-grid">
+        <label style="margin:0;">Video Filter
+          <select id="playUploadFilterSelect" class="play-music-select">
+            <option value="none">Original (None)</option>
+            <option value="vivid">Vivid</option>
+            <option value="warm">Warm Sunset</option>
+            <option value="cool">Cyber Cool</option>
+            <option value="noir">Noir B&amp;W</option>
+            <option value="retro">Retro Vintage</option>
+          </select>
+        </label>
+        <label style="margin:0;">Playback Speed
+          <select id="playUploadSpeedSelect" class="play-music-select">
+            <option value="0.5">0.5x Slow</option>
+            <option value="1" selected>1x Normal</option>
+            <option value="1.25">1.25x Fast</option>
+            <option value="1.5">1.5x Faster</option>
+            <option value="2">2x Turbo</option>
+          </select>
+        </label>
+      </div>
+      <label class="play-mute-orig-check">
+        <input type="checkbox" id="playUploadMuteOrigCheckbox">
+        <span>Mute original video audio</span>
+      </label>
+      <label style="margin-top:10px;">Background Music (optional · Music folder)
+        <div class="play-music-picker-row">
+          <select id="playUploadMusicSelect" class="play-music-select">
+            <option value="">Original Video Audio (No extra music)</option>
+          </select>
+          <button type="button" class="zoom-btn" id="playUploadMusicPreviewBtn">▶ Test</button>
+        </div>
+      </label>
+      <div style="margin-top:10px;">
+        <div class="tiny" style="font-weight:700;margin-bottom:4px;">Or Upload Custom Song <span class="muted">(baked into video file)</span></div>
+        <div class="play-voiceover-box play-custom-song-box">
+          <div class="play-vo-controls">
+            <label class="upload-link play-custom-song-btn" for="playUploadCustomSongInput">♪ Upload Custom Song</label>
+            <input id="playUploadCustomSongInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" hidden>
+            <button type="button" class="zoom-btn hidden" id="playUploadCustomSongPreviewBtn">▶ Test</button>
+            <button type="button" class="deny-btn hidden" id="playUploadCustomSongClearBtn" style="padding:5px 10px;font-size:12px;">Clear</button>
+          </div>
+          <div class="muted tiny" id="playUploadCustomSongStatus">Optional — MP3, WAV, OGG, or M4A mixed directly into your GitHub video file.</div>
+        </div>
+      </div>
+      <label style="margin-top:10px;">Voiceover (Mic · Optional — replays with Music!)
+        <div class="play-voiceover-box" style="margin-top:4px;">
+          <div class="play-vo-controls">
+            <button type="button" class="play-vo-rec-btn" id="playUploadVoRecBtn">🎙 Record Mic</button>
+            <button type="button" class="zoom-btn hidden" id="playUploadVoPreviewBtn">▶ Test</button>
+            <button type="button" class="deny-btn hidden" id="playUploadVoClearBtn" style="padding:5px 10px;font-size:12px;">Clear</button>
+          </div>
+          <div class="muted tiny" id="playUploadVoStatus">No voiceover recorded.</div>
+        </div>
+      </label>
+      <label style="margin-top:10px;">Link a Coin (optional)
+        <select id="playUploadCoinSelect" class="play-music-select" style="width:100%;">
+          <option value="">No Linked Coin</option>
+        </select>
+      </label>
+      <p class="muted tiny" style="margin:8px 0 0;">STRICTLY NO copyrighted videos or music (<a href="#tos" class="tos-inline-link" data-open-tos="1">TOS</a>). <span id="playUploadFeeInline">Member: $50 · PRO: $10 · Premium: Free</span></p>
+      <p id="playUploadMsg" class="form-message"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
+        <button type="button" class="zoom-btn" id="cancelPlayVideoFileBtn" style="padding:10px 16px;">Cancel</button>
+        <button type="button" class="primary-btn" id="publishPlayVideoFileBtn" disabled>Publish Video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY USE / DOWNLOAD SOUND MODAL -->
+  <div id="playUseSongModal" class="modal-backdrop hidden" style="z-index:123;" role="dialog" aria-modal="true" aria-labelledby="playUseSongHeading">
+    <div class="modal-card play-use-song-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">SOUND USED IN THIS VIDEO</div>
+          <h3 id="playUseSongHeading">♫ Song</h3>
+          <p id="playUseSongSub" class="muted tiny" style="margin:2px 0 0;">Shared sound in PLAY</p>
+        </div>
+        <button type="button" class="zoom-btn" id="closePlayUseSongBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="play-voiceover-box play-use-song-box">
+        <div id="playUseSongStatus" class="muted tiny">Downloading sound...</div>
+        <div class="play-use-song-preview-row">
+          <button type="button" class="zoom-btn" id="playUseSongPreviewBtn">▶ Preview Sound</button>
+          <button type="button" class="zoom-btn" id="playUseSongDownloadBtn">⬇ Download Audio</button>
+        </div>
+      </div>
+      <div class="play-use-song-actions">
+        <button type="button" class="primary-btn" id="playUseSongInEditorBtn">🎬 Use in Video Editor</button>
+        <button type="button" class="zoom-btn" id="playUseSongInUploadBtn">📤 Use in Upload Video</button>
+      </div>
+      <p id="playUseSongMsg" class="form-message" style="margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <!-- CREATOR DONATION MODAL (Play & Live yellow '+' button) -->
+  <div id="playDonateModal" class="modal-backdrop hidden" style="z-index:122;" role="dialog" aria-modal="true" aria-labelledby="playDonateHeading">
+    <div class="modal-card play-donate-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow" style="color:#facc15;">CREATOR DONATION</div>
+          <h3 id="playDonateHeading">Donate Cash</h3>
+        </div>
+        <button type="button" class="zoom-btn" id="closePlayDonateBtn" aria-label="Close">✕</button>
+      </div>
+      <div id="playDonateRecipientCard" class="play-donate-recipient"></div>
+      <div class="play-donate-quick-row" id="playDonateQuickBtns">
+        <button type="button" class="play-donate-chip" data-donate-amt="1">$1</button>
+        <button type="button" class="play-donate-chip" data-donate-amt="5">$5</button>
+        <button type="button" class="play-donate-chip" data-donate-amt="10">$10</button>
+        <button type="button" class="play-donate-chip" data-donate-amt="25">$25</button>
+        <button type="button" class="play-donate-chip" data-donate-amt="50">$50</button>
+      </div>
+      <label style="margin-top:10px;">Amount (USD)
+        <input id="playDonateAmountInput" type="number" min="0.50" step="0.01" placeholder="5.00">
+      </label>
+      <label style="margin-top:8px;">Message (optional)
+        <input id="playDonateNoteInput" maxlength="120" placeholder="Nice video! Keep grinding...">
+      </label>
+      <div class="muted tiny" id="playDonateCashAvail" style="margin-top:6px;">Available cash: $0.00</div>
+      <p id="playDonateMsg" class="form-message"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+        <button type="button" class="zoom-btn" id="cancelPlayDonateBtn" style="padding:10px 16px;">Cancel</button>
+        <button type="button" class="play-donate-send-btn" id="confirmPlayDonateBtn">＋ Send Donation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAY VIDEO BOOST MODAL -->
+  <div id="playBoostModal" class="modal-backdrop hidden" style="z-index:124;" role="dialog" aria-modal="true" aria-labelledby="playBoostHeading">
+    <div class="modal-card play-boost-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">⚡ PLAY BOOST</div>
+          <h3 id="playBoostHeading">Boost Video Reach</h3>
+          <p id="playBoostVideoMeta" class="muted tiny" style="margin:2px 0 0;">Selected video</p>
+        </div>
+        <button type="button" class="zoom-btn" id="closePlayBoostBtn" aria-label="Close">✕</button>
+      </div>
+      <div id="playBoostStatusNote" class="play-boost-status-note hidden"></div>
+      <p class="muted tiny" style="margin:0 0 12px;">Boosted videos show up in PLAY with the same high priority as creators users follow, and display a purple <strong>Boosted</strong> tag under your username.</p>
+      <div class="play-boost-plans-grid">
+        <button type="button" class="play-boost-plan-btn" data-boost-days="1" data-boost-cost="399">
+          <div class="play-boost-plan-top">
+            <span class="play-boost-bolt-badge">⚡ 1 DAY</span>
+            <strong class="play-boost-price">$399</strong>
+          </div>
+          <div class="muted tiny">Boosts your video in PLAY for 24 hours.</div>
+        </button>
+        <button type="button" class="play-boost-plan-btn is-featured" data-boost-days="2" data-boost-cost="500">
+          <div class="play-boost-plan-top">
+            <span class="play-boost-bolt-badge">⚡ 2 DAYS · BEST VALUE</span>
+            <strong class="play-boost-price">$500</strong>
+          </div>
+          <div class="muted tiny">Boosts your video in PLAY for 48 hours!</div>
+        </button>
+      </div>
+      <div class="muted tiny" id="playBoostCashAvail" style="margin-top:10px;">Available cash: $0.00</div>
+      <p id="playBoostMsg" class="form-message"></p>
+    </div>
+  </div>
+
+  <!-- TRADER BATTLE CHALLENGE MODAL (Step 1: Length, Step 2: Price) -->
+  <div id="traderBattleModal" class="modal-backdrop hidden" style="z-index:125;" role="dialog" aria-modal="true" aria-labelledby="tbModalHeading">
+    <div class="modal-card tb-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">⚔️ TRADER BATTLE</div>
+          <h3 id="tbModalHeading">Challenge Trader</h3>
+          <p id="tbOpponentMeta" class="muted tiny" style="margin:2px 0 0;">Select battle length and stake.</p>
+        </div>
+        <button type="button" class="zoom-btn" id="closeTraderBattleBtn" aria-label="Close">✕</button>
+      </div>
+
+      <div id="tbStepLength">
+        <div class="tb-step-label">1. Length</div>
+        <p class="muted tiny" style="margin:2px 0 10px;">Choose how long the Trader Battle lasts once accepted (cannot be stopped mid-battle).</p>
+        <div class="tb-chips-grid" id="tbLengthPresets">
+          <button type="button" class="tb-preset-chip active" data-tb-mins="120">2h</button>
+          <button type="button" class="tb-preset-chip" data-tb-mins="480">8h</button>
+          <button type="button" class="tb-preset-chip" data-tb-mins="720">12h</button>
+          <button type="button" class="tb-preset-chip" data-tb-mins="1440">24h</button>
+          <button type="button" class="tb-preset-chip" data-tb-mins="2880">48h</button>
+          <button type="button" class="tb-preset-chip" data-tb-mins="5760">96h</button>
+        </div>
+        <p id="tbLengthMsg" class="form-message"></p>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+          <button type="button" class="zoom-btn" id="tbCancelLengthBtn" style="padding:10px 16px;">Cancel</button>
+          <button type="button" class="primary-btn" id="tbNextToPriceBtn">Next: Price →</button>
+        </div>
+      </div>
+
+      <div id="tbStepPrice" class="hidden">
+        <div class="tb-step-label">2. Price Mode</div>
+        <div id="tbBalancesSummary" class="tb-balances-box"></div>
+        <div class="tb-mode-tabs" id="tbPriceModeTabs" style="margin-top:10px;">
+          <button type="button" class="tb-mode-tab active" data-tb-mode="fixed">💵 Set Stake</button>
+          <button type="button" class="tb-mode-tab" data-tb-mode="classic">🔥 Classic Mode (½ Gains)</button>
+        </div>
+        <div id="tbFixedStakePanel">
+          <div class="tb-chips-grid" id="tbPricePresets" style="margin-top:10px;">
+            <button type="button" class="tb-preset-chip" data-tb-stake="10">$10</button>
+            <button type="button" class="tb-preset-chip" data-tb-stake="25">$25</button>
+            <button type="button" class="tb-preset-chip" data-tb-stake="50">$50</button>
+            <button type="button" class="tb-preset-chip" data-tb-stake="100">$100</button>
+            <button type="button" class="tb-preset-chip" data-tb-stake="500">$500</button>
+            <button type="button" class="tb-preset-chip" data-tb-stake="max">Max</button>
+          </div>
+          <label style="margin-top:10px;">Battle Stake Amount (USD)
+            <input id="tbStakeInput" type="number" min="1" step="0.01" placeholder="50.00">
+          </label>
+          <p class="muted tiny" style="margin:6px 0 0;">Both players must have this amount. If either player's money drops below this bar during the battle, the prize automatically shrinks to that minimum.</p>
+        </div>
+        <div id="tbClassicModePanel" class="tb-classic-box hidden">
+          <div class="tb-classic-title">🔥 Classic Mode — No Fixed Stake</div>
+          <p class="muted tiny" style="margin:4px 0 0;">All money gained during the battle is divided by <strong>2</strong> in real time and becomes the live <strong>Prize Money</strong> pool. Watch the counter tick with <strong>+</strong> and <strong>-</strong> icons live in the battle menu as both traders gain or lose money!</p>
+        </div>
+        <p id="tbPriceMsg" class="form-message"></p>
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:14px;">
+          <button type="button" class="zoom-btn" id="tbBackToLengthBtn" style="padding:10px 16px;">← Length</button>
+          <button type="button" class="primary-btn" id="tbSendChallengeBtn">⚔️ Send Challenge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE / PENDING TRADER BATTLE STATUS MODAL -->
+  <div id="traderBattleInfoModal" class="modal-backdrop hidden" style="z-index:125;" role="dialog" aria-modal="true" aria-labelledby="tbInfoHeading">
+    <div class="modal-card tb-modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">⚔️ TRADER BATTLE</div>
+          <h3 id="tbInfoHeading">Battle Status</h3>
+        </div>
+        <button type="button" class="zoom-btn" id="closeTbInfoBtn" aria-label="Close">✕</button>
+      </div>
+      <div id="tbInfoModalBody"></div>
+    </div>
+  </div>
+
+  <!-- TRADER BATTLE RESULT POPUP MODAL -->
+  <div id="traderBattleResultModal" class="modal-backdrop hidden" style="z-index:128;" role="dialog" aria-modal="true" aria-labelledby="tbResultHeading">
+    <div class="modal-card tb-result-card">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow purple-text">⚔️ BATTLE COMPLETE</div>
+          <h3 id="tbResultHeading">You won the battle!</h3>
+        </div>
+        <button type="button" class="zoom-btn" id="closeTbResultBtn" aria-label="Close">✕</button>
+      </div>
+      <div id="tbResultModalBody"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="primary-btn" id="tbResultDoneBtn">Awesome</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="grindIntro" class="grind-intro hidden" aria-hidden="true">
+    <button type="button" class="grind-intro-skip" id="grindIntroSkip">SKIP INTRO <span>↗</span></button>
+    <div class="grind-intro-stage">
+      <canvas class="grind-intro-particles" id="grindIntroParticles"></canvas>
+      <div class="grind-intro-scanline"></div>
+      <div class="grind-intro-studio" id="grindIntroStudio">
+        <div class="grind-intro-overline">A DOMPIC ENTERTAINMENT PRESENTATION</div>
+        <img class="grind-intro-logo" src="dompic-logo.svg?v=1" alt="Dompic Entertainment"/>
+        <div class="grind-intro-studio-caption">CREATED WITH PURPOSE. BUILT TO LAST.</div>
+      </div>
+      <div class="grind-intro-transition-mark" aria-hidden="true">◆</div>
+      <div class="grind-intro-grind" id="grindIntroGrind">
+        <div class="grind-intro-overline">THE NEXT CHAPTER</div>
+        <div class="grind-intro-grind-word">GRIND<span>.</span></div>
+        <div class="grind-intro-tagline">GRIND YOUR WAY THROUGH THE MARKET</div>
+      </div>
+      <div class="grind-intro-chapters" id="grindIntroChapters" aria-live="polite">
+        <section class="grind-intro-chapter" data-intro-chapter="0">
+          <div class="chapter-kicker">GRIND 1.0 · THE FULL RELEASE</div>
+          <h2>BUILD YOUR<br/><span>OWN TECH EMPIRE.</span></h2>
+          <p>Four specialist company types. One connected marketplace.</p>
+          <div class="feature-visual company-types-visual">
+            <div class="type-tile"><b>CPU</b><i class="silicon-chip"></i><small>PROCESSORS</small></div>
+            <div class="type-tile"><b>GPU</b><i class="silicon-gpu"></i><small>GRAPHICS</small></div>
+            <div class="type-tile"><b>CHIP</b><i class="silicon-wafer"></i><small>SILICON</small></div>
+            <div class="type-tile"><b>PC</b><i class="silicon-pc"></i><small>SYSTEMS</small></div>
+          </div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="1">
+          <div class="chapter-kicker">CPU DESIGN STUDIO</div>
+          <h2>ENGINEER<br/><span>YOUR OWN PROCESSORS.</span></h2>
+          <p>Shape the specs, research new technology and create a product lineup.</p>
+          <div class="feature-visual editor-visual"><div class="editor-sidebar"><i></i><i></i><i></i><i></i><i></i></div><div class="editor-main"><div class="editor-toolbar"><b>CPU DESIGNER</b><span>● LIVE PREVIEW</span></div><div class="editor-chip"></div><div class="editor-controls"><i></i><i></i><i></i></div></div><div class="editor-stats"><b>CORES <em>16</em></b><b>THREADS <em>32</em></b><b>CLOCK <em>5.4 GHz</em></b></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="2">
+          <div class="chapter-kicker">GPU DESIGN STUDIO</div>
+          <h2>CREATE<br/><span>GRAPHICS POWER.</span></h2>
+          <p>Design graphics cards, customize their hardware and bring them to market.</p>
+          <div class="feature-visual gpu-visual"><div class="gpu-card"><div class="gpu-fan"></div><div class="gpu-fan second"></div><div class="gpu-brand">GRIND<br/>RTX SERIES</div><div class="gpu-ports"></div></div><div class="visual-caption">3D PRODUCT PREVIEW <span>ROTATE · INSPECT · PUBLISH</span></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="3">
+          <div class="chapter-kicker">CHIP DESIGN STUDIO</div>
+          <h2>GO DEEPER.<br/><span>DESIGN THE SILICON.</span></h2>
+          <p>Build chip products and develop the technology behind tomorrow’s hardware.</p>
+          <div class="feature-visual chip-visual"><div class="wafer-disc"><div class="wafer-grid"></div><div class="wafer-core">D</div></div><div class="chip-specs"><b>PROCESS NODE <em>ADVANCED</em></b><b>ARCHITECTURE <em>CUSTOM</em></b><b>RESEARCH <em>UNLOCKED</em></b></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="4">
+          <div class="chapter-kicker">PC DESIGN & ASSEMBLY</div>
+          <h2>BRING IT ALL<br/><span>TOGETHER.</span></h2>
+          <p>Choose components, assemble complete PCs and turn individual parts into finished systems.</p>
+          <div class="feature-visual pc-visual"><div class="pc-case"><div class="pc-glass"><i></i><i></i><i></i><b>GRIND</b></div><div class="pc-front"></div></div><div class="pc-build-list"><b>YOUR BUILD</b><span>✓ CPU</span><span>✓ GPU</span><span>✓ MEMORY</span><span>✓ STORAGE</span><strong>READY TO BUILD</strong></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="5">
+          <div class="chapter-kicker">COMPANY HQ · PRODUCTS · RESEARCH</div>
+          <h2>RUN YOUR<br/><span>OWN COMPANY.</span></h2>
+          <p>Manage your company, publish products, expand your lineup and invest in research.</p>
+          <div class="feature-visual dashboard-visual"><div class="dash-top"><b>COMPANY OVERVIEW</b><span>● ONLINE</span></div><div class="dash-metrics"><i><small>REVENUE</small><b>$128.4K</b></i><i><small>PRODUCTS</small><b>12</b></i><i><small>GROWTH</small><b>+18.6%</b></i></div><div class="dash-chart"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="dash-products"><i></i><i></i><i></i><i></i></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="6">
+          <div class="chapter-kicker">THE COMMUNITY MARKET</div>
+          <h2>DISCOVER.<br/><span>COMPETE. CONNECT.</span></h2>
+          <p>Explore products and companies, follow live activity, climb global leaderboards and meet the people building the market.</p>
+          <div class="feature-visual market-visual"><div class="market-panel"><b>PRODUCT MARKET</b><div class="market-row"><i class="mini-product cpu"></i><span>CORE X PROCESSOR<small>CPU · NEW</small></span><strong>$249</strong></div><div class="market-row"><i class="mini-product gpu"></i><span>NOVA GRAPHICS<small>GPU · TRENDING</small></span><strong>$599</strong></div><div class="market-row"><i class="mini-product pc"></i><span>APEX GAMING PC<small>PC · FEATURED</small></span><strong>$1,499</strong></div></div><div class="live-panel"><b>LIVE ACTIVITY <em>● LIVE</em></b><span>New product published</span><span>Company reached a milestone</span><span>New market activity</span></div></div>
+        </section>
+        <section class="grind-intro-chapter" data-intro-chapter="7">
+          <div class="chapter-kicker">THE NEXT ERA STARTS NOW</div>
+          <h2>WELCOME TO<br/><span>GRIND 1.0.</span></h2>
+          <p>From first design to a growing technology empire. This is your market.</p>
+          <div class="chapter-final-mark">GRIND<span>.</span></div>
+          <div class="chapter-release-line">VERSION 1.0 · FULL RELEASE</div>
+        </section>
+      </div>
+    </div>
+    </div>
+    <div class="grind-intro-progress"><span></span></div>
+  </div>
+
+
+  
+  <div id="grindAdDesigner" class="grind-ad-modal hidden" role="dialog" aria-modal="true" aria-labelledby="grindAdDesignerTitle">
+    <div class="grind-ad-dialog">
+      <header class="grind-ad-dialog-head"><div><div class="eyebrow purple-text">GRIND AD STUDIO</div><h3 id="grindAdDesignerTitle">Create product ad</h3><p id="grindAdProductName" class="muted tiny"></p></div><button type="button" class="zoom-btn" id="grindAdClose">✕</button></header>
+      <div class="grind-ad-editor-layout">
+        <div class="grind-ad-tools">
+          <label>Headline<input id="grindAdHeadline" maxlength="80" placeholder="Make your product stand out"></label>
+          <label>Description<textarea id="grindAdDescription" maxlength="180" rows="3" placeholder="Short product description"></textarea></label>
+          <label class="grind-ad-upload">Upload image<input id="grindAdImageFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+          <button type="button" class="zoom-btn" id="grindAdTakePicture">Take Picture of product preview</button>
+          <div class="grind-ad-tool-row"><button type="button" class="zoom-btn" id="grindAdAddText">＋ Add text</button><button type="button" class="zoom-btn" id="grindAdAddSticker">＋ Sticker</button></div>
+          <label>Selected element text<input id="grindAdElementText" maxlength="80" placeholder="Select a text element"></label>
+          <label>Text size<input id="grindAdElementSize" type="range" min="12" max="64" value="28"></label>
+          <p class="muted tiny">Drag elements on the preview. Use the size slider to resize selected text.</p>
+          <div class="grind-ad-pricing" id="grindAdPricing"></div>
+          <button type="button" class="primary-btn full" id="grindAdPurchase">Preview &amp; pay</button>
+          <p id="grindAdMessage" class="form-message" aria-live="polite"></p>
+        </div>
+        <div class="grind-ad-preview-wrap"><div class="grind-ad-preview-label">LIVE PREVIEW · SPONSORED</div><canvas id="grindAdCanvas" width="1280" height="720"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <!-- REAL-TIME NOTIFICATION POPUP STACK -->
+  <div id="liveNotifPopups" class="live-notif-popups-container" aria-live="polite"></div>
+
+  <!-- REWARD BURST LAYER (Daily Login & Season Pass) -->
+  <div id="rewardBurstLayer" class="reward-burst-layer" aria-hidden="true"></div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script defer src="company-logo-studio.js?v=2"></script>
+  <script defer src="cpu-designer-3d.js?v=13"></script>
+  <script defer src="gpu-designer-3d.js?v=12"></script>
+  <script defer src="chip-designer-3d.js?v=2"></script>
+  <script defer src="pc-designer-3d.js?v=5"></script>
+  <script defer src="mobo-designer-3d.js?v=2"></script>
+  <script defer src="product-preview-modal.js?v=4"></script>
+  <script defer src="pc-assembly-ritual.js?v=3"></script>
+  <script defer src="grind-intro.js?v=4"></script>
+  <script defer src="app.js?v=118"></script>
+  <script defer src="company-stocks.js?v=3"></script>
+  <script defer src="company-mobo.js?v=3"></script>
+  <script defer src="company-pc.js?v=7"></script>
+  <script defer src="company-gpu.js?v=29"></script>
+  <script defer src="grindworld.js?v=8"></script>
+  <script defer src="grind-ads.js?v=7"></script>
+</body>
+</html>
